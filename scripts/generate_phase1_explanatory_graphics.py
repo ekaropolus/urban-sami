@@ -428,8 +428,8 @@ def write_y_beta_r2_map() -> Path:
 
 def write_fitability_map() -> Path:
     rows = read_csv(FITABILITY)
-    width, height = 1200, 820
-    left, top, right, bottom = 105, 120, 80, 105
+    width, height = 1380, 820
+    left, top, right, bottom = 105, 120, 285, 105
     plot_w = width - left - right
     plot_h = height - top - bottom
 
@@ -456,8 +456,8 @@ def write_fitability_map() -> Path:
             f'<circle cx="{px(f(row["coverage_rate"])):.1f}" cy="{py(f(row["r2"])):.1f}" r="{radius:.1f}" fill="{CLASS_COLORS.get(klass, GRAY)}" fill-opacity="0.58"/>'
         )
 
-    legend_x = width - 270
-    legend_y = top + 25
+    legend_x = left + plot_w + 38
+    legend_y = top
     parts.append(f'<rect x="{legend_x}" y="{legend_y}" width="205" height="118" rx="6" fill="#fff8ed" stroke="#e4c99c"/>')
     for idx, klass in enumerate(["A_strong", "B_usable", "C_exploratory", "D_unfit"]):
         y = legend_y + 24 + idx * 23
