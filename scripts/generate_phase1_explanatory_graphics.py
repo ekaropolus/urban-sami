@@ -298,51 +298,6 @@ def write_sami_by_state_multipanel() -> Path:
     return svg(OUT_DIR / "phase1_sami_by_state_multipanel.svg", "".join(parts), width, height)
 
 
-def write_outcome_catalog() -> Path:
-    rows = read_csv(CORE_SUMMARY)
-    families = ["total", "per_ocu", "size_class", "scian2", "scian3"]
-    labels = {r["family"]: r["family_label"] for r in rows}
-    by_family = {r["family"]: r for r in rows}
-
-    width, height = 1200, 760
-    left, top, right, bottom = 110, 130, 80, 130
-    plot_w = width - left - right
-    plot_h = height - top - bottom
-    max_total = max(f(by_family[k]["y_count_total"]) for k in families)
-
-    parts = frame(width, height, "Phase I: one Y became a catalog", "Bars show how many outcome definitions were tested and how many were retained as interpretable.")
-    parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#fbfdff" stroke="#8c939b"/>')
-
-    band = plot_w / len(families)
-    for idx, family in enumerate(families):
-        row = by_family[family]
-        total = f(row["y_count_total"])
-        retained = f(row["retained_count"])
-        x = left + idx * band + band * 0.22
-        bar_w = band * 0.56
-        total_h = total / max_total * plot_h
-        retained_h = retained / max_total * plot_h
-        y_total = top + plot_h - total_h
-        y_retained = top + plot_h - retained_h
-        parts.append(f'<rect x="{x:.1f}" y="{y_total:.1f}" width="{bar_w:.1f}" height="{total_h:.1f}" fill="#d9e1ea"/>')
-        parts.append(f'<rect x="{x:.1f}" y="{y_retained:.1f}" width="{bar_w:.1f}" height="{retained_h:.1f}" fill="{BLUE}"/>')
-        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{y_retained-8:.1f}" text-anchor="middle" font-size="13" font-family="Helvetica" fill="{INK}">{int(retained)}/{int(total)}</text>')
-        label = labels[family].replace("DENUE ", "")
-        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{top+plot_h+28}" text-anchor="middle" font-size="12" font-family="Helvetica" fill="{INK}">{esc(label)}</text>')
-        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{top+plot_h+48}" text-anchor="middle" font-size="11" font-family="Helvetica" fill="{MUTED}">median beta {f(row["median_beta_retained"]):.2f}</text>')
-        parts.append(f'<text x="{x+bar_w/2:.1f}" y="{top+plot_h+65}" text-anchor="middle" font-size="11" font-family="Helvetica" fill="{MUTED}">median R² {f(row["median_r2_retained"]):.2f}</text>')
-
-    legend_x = width - 285
-    legend_y = top + 20
-    parts.append(f'<rect x="{legend_x}" y="{legend_y}" width="215" height="78" rx="6" fill="#fff8ed" stroke="#e4c99c"/>')
-    parts.append(f'<rect x="{legend_x+16}" y="{legend_y+18}" width="18" height="18" fill="{BLUE}"/>')
-    parts.append(f'<text x="{legend_x+44}" y="{legend_y+32}" font-size="13" font-family="Helvetica" fill="{INK}">retained</text>')
-    parts.append(f'<rect x="{legend_x+16}" y="{legend_y+45}" width="18" height="18" fill="#d9e1ea"/>')
-    parts.append(f'<text x="{legend_x+44}" y="{legend_y+59}" font-size="13" font-family="Helvetica" fill="{INK}">tested but not retained</text>')
-    parts.append(f'<text x="34" y="{top+plot_h/2}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}" transform="rotate(-90 34 {top+plot_h/2})">number of Y definitions</text>')
-    return svg(OUT_DIR / "phase1_outcome_catalog.svg", "".join(parts), width, height)
-
-
 def write_y_beta_r2_map() -> Path:
     retained = [
         row
@@ -668,27 +623,21 @@ def write_guide(paths: list[Path]) -> Path:
                 "",
                 "This multi-panel figure keeps cities visible instead of collapsing them into one national histogram. Each panel is a state, each point is a city ordered by population, the red line is the national expectation `SAMI = 0`, and the colored line is the state mean.",
                 "",
-                "## 5. Outcome Catalog",
+                "## 5. Y, Beta, and R2",
                 "",
-                f"![Outcome catalog]({rels[4]})",
-                "",
-                "The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.",
-                "",
-                "## 6. Y, Beta, and R2",
-                "",
-                f"![Y beta R2 map]({rels[5]})",
+                f"![Y beta R2 map]({rels[4]})",
                 "",
                 "This figure opens the retained catalog. Each row is one retained outcome `Y`; the arrow points to its fitted exponent `beta`; the right-side numeric column gives the corresponding `R2`.",
                 "",
-                "## 7. Fitability",
+                "## 6. Fitability",
                 "",
-                f"![Fitability map]({rels[6]})",
+                f"![Fitability map]({rels[5]})",
                 "",
                 "This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.",
                 "",
-                "## 8. Exponents Across Retained Outcomes",
+                "## 7. Exponents Across Retained Outcomes",
                 "",
-                f"![Beta and R2 catalog]({rels[7]})",
+                f"![Beta and R2 catalog]({rels[6]})",
                 "",
                 "Retained outcomes have different exponents and fit quality. Phase I therefore creates a family of scaling laws, not a single repeated result.",
                 "",
@@ -719,7 +668,6 @@ def main() -> int:
         write_scaling_law(),
         write_residual_histogram(),
         write_sami_by_state_multipanel(),
-        write_outcome_catalog(),
         write_y_beta_r2_map(),
         write_fitability_map(),
         write_beta_r2_catalog(),

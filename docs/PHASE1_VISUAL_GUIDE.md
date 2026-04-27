@@ -28,25 +28,19 @@ After fitting the law, every city has a log deviation from expectation. This res
 
 This multi-panel figure keeps cities visible instead of collapsing them into one national histogram. Each panel is a state, each point is a city ordered by population, the red line is the national expectation `SAMI = 0`, and the colored line is the state mean.
 
-## 5. Outcome Catalog
-
-![Outcome catalog](figures/phase1/phase1_outcome_catalog.svg)
-
-The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.
-
-## 6. Y, Beta, and R2
+## 5. Y, Beta, and R2
 
 ![Y beta R2 map](figures/phase1/phase1_y_beta_r2_map.svg)
 
 This figure opens the retained catalog. Each row is one retained outcome `Y`; the arrow points to its fitted exponent `beta`; the right-side numeric column gives the corresponding `R2`.
 
-## 7. Fitability
+## 6. Fitability
 
 ![Fitability map](figures/phase1/phase1_fitability_map.svg)
 
 This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.
 
-## 8. Exponents Across Retained Outcomes
+## 7. Exponents Across Retained Outcomes
 
 ![Beta and R2 catalog](figures/phase1/phase1_beta_r2_catalog.svg)
 
