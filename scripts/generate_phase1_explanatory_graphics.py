@@ -326,31 +326,109 @@ def write_beta_r2_catalog() -> Path:
 
 
 def write_workflow() -> Path:
-    width, height = 1200, 560
-    parts = frame(width, height, "Phase I workflow", "The baseline branch turns persisted population and DENUE rows into a city-law catalog.")
+    width, height = 1550, 650
+    parts = frame(
+        width,
+        height,
+        "Phase I workflow as equations",
+        "Phase I turns persisted population and DENUE rows into a reproducible catalog of city scaling laws.",
+    )
     boxes = [
-        ("Persistent inputs", "raw.population_units\nraw.denue_establishments"),
-        ("City aggregation", "count E_i by city\nmatch N_i from INEGI"),
-        ("Baseline law", "log E_i = alpha + beta log N_i\nbeta = 0.950, adj. R² = 0.846"),
-        ("Outcome catalog", "fit Y_i^(f,c) for DENUE families\nper_ocu, size_class, SCIAN2, SCIAN3"),
-        ("Fitability audit", "coverage + zero rate + R²\nretain 71 interpretable outcomes"),
+        {
+            "title": "1. Persistent inputs",
+            "equations": [
+                "city i has population N_i",
+                "DENUE row r has city c(r)",
+                "attributes a(r): SCIAN, size, per_ocu",
+            ],
+            "note": "raw.population_units + raw.denue_establishments",
+            "color": BLUE,
+        },
+        {
+            "title": "2. City aggregation",
+            "equations": [
+                "E_i = sum_{r: c(r)=i} 1",
+                "Y_i^(f,k) = sum_r 1[c(r)=i]",
+                "              * 1[f(r)=k]",
+                "one city table: (N_i, E_i, Y_i^(f,k))",
+            ],
+            "note": "city-level extensive variables",
+            "color": TEAL,
+        },
+        {
+            "title": "3. Baseline law",
+            "equations": [
+                "log E_i = alpha + beta log N_i + eps_i",
+                "E_i = exp(alpha) N_i^beta exp(eps_i)",
+                "beta_hat = 0.950, adj. R2 = 0.846",
+            ],
+            "note": "first Bettencourt-style city law",
+            "color": RUST,
+        },
+        {
+            "title": "4. Outcome catalog",
+            "equations": [
+                "log Y_i^(f,k) = alpha_fk",
+                "                 + beta_fk log N_i",
+                "                 + eps_i^(f,k)",
+                "f: total, size, per_ocu, SCIAN",
+            ],
+            "note": "same experiment repeated across outcomes",
+            "color": GOLD,
+        },
+        {
+            "title": "5. Fitability audit",
+            "equations": [
+                "A_fk = (n_fk, coverage_fk,",
+                "       zero_fk, R2_fk)",
+                "keep if A_fk is interpretable",
+                "|F_retained| = 71 outcomes",
+            ],
+            "note": "separates signal from sparse categories",
+            "color": GREEN,
+        },
     ]
-    x0, y0 = 60, 150
-    bw, bh, gap = 190, 190, 35
-    for idx, (title, text) in enumerate(boxes):
+    x0, y0 = 48, 150
+    bw, bh, gap = 270, 245, 30
+    for idx, box in enumerate(boxes):
         x = x0 + idx * (bw + gap)
-        color = [BLUE, TEAL, RUST, GOLD, GREEN][idx]
+        color = box["color"]
         parts.append(f'<rect x="{x}" y="{y0}" width="{bw}" height="{bh}" rx="8" fill="#fbfdff" stroke="{color}" stroke-width="2"/>')
-        parts.append(f'<text x="{x+18}" y="{y0+34}" font-size="17" font-family="Helvetica" font-weight="700" fill="{INK}">{esc(title)}</text>')
-        for j, line in enumerate(text.splitlines()):
-            parts.append(f'<text x="{x+18}" y="{y0+72+j*24}" font-size="13" font-family="Helvetica" fill="{MUTED}">{esc(line)}</text>')
+        parts.append(f'<text x="{x+18}" y="{y0+34}" font-size="17" font-family="Helvetica" font-weight="700" fill="{INK}">{esc(box["title"])}</text>')
+        for j, line in enumerate(box["equations"]):
+            parts.append(f'<text x="{x+18}" y="{y0+78+j*28}" font-size="14" font-family="Georgia" font-style="italic" fill="{INK}">{esc(line)}</text>')
+        parts.append(f'<line x1="{x+18}" y1="{y0+187}" x2="{x+bw-18}" y2="{y0+187}" stroke="{color}" stroke-width="1.2" stroke-opacity="0.55"/>')
+        parts.append(f'<text x="{x+18}" y="{y0+216}" font-size="12" font-family="Helvetica" fill="{MUTED}">{esc(box["note"])}</text>')
         if idx < len(boxes) - 1:
             x1 = x + bw + 8
             x2 = x + bw + gap - 8
             y = y0 + bh / 2
             parts.append(f'<line x1="{x1}" y1="{y}" x2="{x2}" y2="{y}" stroke="{INK}" stroke-width="1.8"/>')
             parts.append(f'<path d="M {x2} {y} l -8 -5 l 0 10 z" fill="{INK}"/>')
-    parts.append(f'<text x="60" y="430" font-size="14" font-family="Helvetica" fill="{INK}">Scripts: run_independent_city_baseline.py -> run_city_y_fitability_audit.py -> run_city_y_curated_results_pack.py -> run_city_grouped_profiles.py</text>')
+            labels = ["aggregate", "fit", "expand", "curate"]
+            parts.append(f'<text x="{(x1+x2)/2}" y="{y-14}" text-anchor="middle" font-size="11" font-family="Helvetica" fill="{MUTED}">{labels[idx]}</text>')
+
+    scripts = [
+        "run_independent_city_baseline.py",
+        "run_city_y_fitability_audit.py",
+        "run_city_y_curated_results_pack.py",
+        "run_city_grouped_profiles.py",
+    ]
+    parts.append(f'<text x="50" y="475" font-size="17" font-family="Helvetica" font-weight="700" fill="{INK}">Executable trace</text>')
+    sx, sy = 50, 505
+    pill_w = [300, 305, 355, 300]
+    for idx, script in enumerate(scripts):
+        x = sx + sum(pill_w[:idx]) + idx * 28
+        parts.append(f'<rect x="{x}" y="{sy}" width="{pill_w[idx]}" height="46" rx="23" fill="#fff8ed" stroke="#dec79e"/>')
+        parts.append(f'<text x="{x+18}" y="{sy+29}" font-size="13" font-family="Helvetica" fill="{INK}">{esc(script)}</text>')
+        if idx < len(scripts) - 1:
+            ax1 = x + pill_w[idx] + 7
+            ax2 = x + pill_w[idx] + 22
+            ay = sy + 23
+            parts.append(f'<line x1="{ax1}" y1="{ay}" x2="{ax2}" y2="{ay}" stroke="{INK}" stroke-width="1.4"/>')
+            parts.append(f'<path d="M {ax2} {ay} l -6 -4 l 0 8 z" fill="{INK}"/>')
+
+    parts.append(f'<text x="50" y="600" font-size="13" font-family="Helvetica" fill="{MUTED}">Interpretation: Phase I begins with one extensive urban quantity, E_i, and then asks whether many DENUE-derived Y_i variables obey comparable population laws.</text>')
     return svg(OUT_DIR / "phase1_workflow.svg", "".join(parts), width, height)
 
 
