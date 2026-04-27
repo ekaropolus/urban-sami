@@ -231,6 +231,73 @@ def write_residual_histogram() -> Path:
     return svg(OUT_DIR / "phase1_residual_histogram.svg", "".join(parts), width, height)
 
 
+def write_sami_by_state_multipanel() -> Path:
+    rows = [r for r in read_csv(RESIDUALS) if f(r["population"]) > 0]
+    state_codes = sorted({r["state_code"] for r in rows})
+    state_colors = {state: STATE_PALETTE[idx % len(STATE_PALETTE)] for idx, state in enumerate(state_codes)}
+    by_state: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in rows:
+        by_state[row["state_code"]].append(row)
+    for state_rows in by_state.values():
+        state_rows.sort(key=lambda row: f(row["population"]), reverse=True)
+
+    width, height = 1600, 1120
+    left, top = 70, 130
+    cols, rows_n = 8, 4
+    gap_x, gap_y = 22, 42
+    panel_w = (width - left - 50 - gap_x * (cols - 1)) / cols
+    panel_h = (height - top - 120 - gap_y * (rows_n - 1)) / rows_n
+    y_min, y_max = -2.5, 2.5
+
+    def py(value: float, y0: float) -> float:
+        clipped = min(max(value, y_min), y_max)
+        return y0 + panel_h - ((clipped - y_min) / (y_max - y_min)) * panel_h
+
+    parts = frame(
+        width,
+        height,
+        "Phase I: SAMI by city, faceted by state",
+        "Each panel is one state. Points are cities ordered by population; y is the city residual from the national establishments law.",
+    )
+
+    for idx, state in enumerate(state_codes):
+        col = idx % cols
+        row_idx = idx // cols
+        x0 = left + col * (panel_w + gap_x)
+        y0 = top + row_idx * (panel_h + gap_y)
+        state_rows = by_state[state]
+        n = len(state_rows)
+        color = state_colors[state]
+        mean_sami = sum(f(r["sami"]) for r in state_rows) / n if n else 0.0
+
+        parts.append(f'<rect x="{x0:.1f}" y="{y0:.1f}" width="{panel_w:.1f}" height="{panel_h:.1f}" fill="#fbfdff" stroke="#c7ced6"/>')
+        for tick in [-2, -1, 0, 1, 2]:
+            y = py(tick, y0)
+            stroke = RUST if tick == 0 else GRID
+            width_tick = 1.4 if tick == 0 else 0.8
+            parts.append(f'<line x1="{x0:.1f}" y1="{y:.1f}" x2="{x0+panel_w:.1f}" y2="{y:.1f}" stroke="{stroke}" stroke-width="{width_tick}"/>')
+            if col == 0:
+                parts.append(f'<text x="{x0-8:.1f}" y="{y+4:.1f}" text-anchor="end" font-size="10" font-family="Helvetica" fill="{MUTED}">{tick:+d}</text>')
+
+        if n == 1:
+            x_positions = [x0 + panel_w / 2]
+        else:
+            x_positions = [x0 + 6 + rank * (panel_w - 12) / (n - 1) for rank in range(n)]
+        for x, city in zip(x_positions, state_rows):
+            y = py(f(city["sami"]), y0)
+            parts.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="1.8" fill="{color}" fill-opacity="0.72"/>')
+
+        y_mean = py(mean_sami, y0)
+        parts.append(f'<line x1="{x0:.1f}" y1="{y_mean:.1f}" x2="{x0+panel_w:.1f}" y2="{y_mean:.1f}" stroke="{color}" stroke-width="1.8" stroke-opacity="0.85"/>')
+        parts.append(f'<text x="{x0+7:.1f}" y="{y0+16:.1f}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">state {esc(state)}</text>')
+        parts.append(f'<text x="{x0+panel_w-7:.1f}" y="{y0+16:.1f}" text-anchor="end" font-size="10" font-family="Helvetica" fill="{MUTED}">n={n}, mean={mean_sami:+.2f}</text>')
+
+    parts.append(f'<text x="{width/2:.1f}" y="{height-48}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}">cities within state, ordered by population rank</text>')
+    parts.append(f'<text x="28" y="{top + (height - top - 120)/2:.1f}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}" transform="rotate(-90 28 {top + (height - top - 120)/2:.1f})">SAMI_i = log(E_i / Ehat_i)</text>')
+    parts.append(f'<text x="70" y="{height-82}" font-size="12" font-family="Helvetica" fill="{MUTED}">Red line: national expectation, SAMI=0. Colored line: mean SAMI within that state.</text>')
+    return svg(OUT_DIR / "phase1_sami_by_state_multipanel.svg", "".join(parts), width, height)
+
+
 def write_outcome_catalog() -> Path:
     rows = read_csv(CORE_SUMMARY)
     families = ["total", "per_ocu", "size_class", "scian2", "scian3"]
@@ -512,21 +579,27 @@ def write_guide(paths: list[Path]) -> Path:
                 "",
                 "After fitting the law, every city has a log deviation from expectation. This residual is the object later mapped and studied as SAMI.",
                 "",
-                "## 4. Outcome Catalog",
+                "## 4. SAMI by State",
                 "",
-                f"![Outcome catalog]({rels[3]})",
+                f"![SAMI by state]({rels[3]})",
+                "",
+                "This multi-panel figure keeps cities visible instead of collapsing them into one national histogram. Each panel is a state, each point is a city ordered by population, the red line is the national expectation `SAMI = 0`, and the colored line is the state mean.",
+                "",
+                "## 5. Outcome Catalog",
+                "",
+                f"![Outcome catalog]({rels[4]})",
                 "",
                 "The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.",
                 "",
-                "## 5. Fitability",
+                "## 6. Fitability",
                 "",
-                f"![Fitability map]({rels[4]})",
+                f"![Fitability map]({rels[5]})",
                 "",
                 "This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.",
                 "",
-                "## 6. Exponents Across Retained Outcomes",
+                "## 7. Exponents Across Retained Outcomes",
                 "",
-                f"![Beta and R2 catalog]({rels[5]})",
+                f"![Beta and R2 catalog]({rels[6]})",
                 "",
                 "Retained outcomes have different exponents and fit quality. Phase I therefore creates a family of scaling laws, not a single repeated result.",
                 "",
@@ -556,6 +629,7 @@ def main() -> int:
         write_workflow(),
         write_scaling_law(),
         write_residual_histogram(),
+        write_sami_by_state_multipanel(),
         write_outcome_catalog(),
         write_fitability_map(),
         write_beta_r2_catalog(),

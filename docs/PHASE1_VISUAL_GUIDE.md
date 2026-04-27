@@ -22,19 +22,25 @@ Each point is one city and point color identifies its Mexican state code. The re
 
 After fitting the law, every city has a log deviation from expectation. This residual is the object later mapped and studied as SAMI.
 
-## 4. Outcome Catalog
+## 4. SAMI by State
+
+![SAMI by state](figures/phase1/phase1_sami_by_state_multipanel.svg)
+
+This multi-panel figure keeps cities visible instead of collapsing them into one national histogram. Each panel is a state, each point is a city ordered by population, the red line is the national expectation `SAMI = 0`, and the colored line is the state mean.
+
+## 5. Outcome Catalog
 
 ![Outcome catalog](figures/phase1/phase1_outcome_catalog.svg)
 
 The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.
 
-## 5. Fitability
+## 6. Fitability
 
 ![Fitability map](figures/phase1/phase1_fitability_map.svg)
 
 This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.
 
-## 6. Exponents Across Retained Outcomes
+## 7. Exponents Across Retained Outcomes
 
 ![Beta and R2 catalog](figures/phase1/phase1_beta_r2_catalog.svg)
 
