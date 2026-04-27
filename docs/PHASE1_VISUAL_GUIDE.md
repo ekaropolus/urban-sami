@@ -38,7 +38,7 @@ The project then stops treating total establishments as the only outcome. It tes
 
 ![Y beta R2 map](figures/phase1/phase1_y_beta_r2_map.svg)
 
-This figure opens the retained catalog. Each row is one retained outcome `Y`; horizontal position is its fitted exponent `beta`; point color and size summarize fit quality `R2`.
+This figure opens the retained catalog. Each row is one retained outcome `Y`; the arrow points to its fitted exponent `beta`; the right-side numeric column gives the corresponding `R2`.
 
 ## 7. Fitability
 

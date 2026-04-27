@@ -359,26 +359,16 @@ def write_y_beta_r2_map() -> Path:
         "scian3": GOLD,
     }
 
-    width, height = 1450, 1750
-    left, top, right, bottom = 420, 125, 120, 95
+    width, height = 1600, 1750
+    left, top, right, bottom = 345, 125, 240, 95
     plot_w = width - left - right
     plot_h = height - top - bottom
     beta_min, beta_max = 0.55, 1.25
-    r2_min, r2_max = 0.55, 0.87
     row_step = plot_h / max(1, len(retained) - 1)
 
     def px(beta: float) -> float:
         clipped = min(max(beta, beta_min), beta_max)
         return left + ((clipped - beta_min) / (beta_max - beta_min)) * plot_w
-
-    def r2_color(r2: float) -> str:
-        if r2 >= 0.82:
-            return GREEN
-        if r2 >= 0.75:
-            return TEAL
-        if r2 >= 0.68:
-            return GOLD
-        return RUST
 
     def short_label(row: dict[str, str]) -> str:
         label = row["category_label"] or row["category"]
@@ -387,17 +377,20 @@ def write_y_beta_r2_map() -> Path:
             label = "all establishments"
         elif family in {"scian2", "scian3"}:
             label = f'{family.upper()} {row["category"]}'
-        if len(label) > 42:
-            label = label[:39] + "..."
+        if len(label) > 30:
+            label = label[:27] + "..."
         return label
 
     parts = frame(
         width,
         height,
         "Phase I: each retained Y has its own beta and R2",
-        "Each row is one retained outcome. Horizontal position is beta; point color and size summarize R2.",
+        "Each row is one retained outcome. Arrows connect the outcome label Y to its beta; R2 is written as a second numeric axis.",
     )
     parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#fbfdff" stroke="#8c939b"/>')
+    parts.append(f'<text x="{left-155}" y="{top-18}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">Y outcome</text>')
+    parts.append(f'<text x="{left+plot_w+28}" y="{top-18}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">R2</text>')
+    parts.append(f'<line x1="{left+plot_w+16}" y1="{top}" x2="{left+plot_w+16}" y2="{top+plot_h}" stroke="#8c939b"/>')
 
     for tick in [0.6, 0.8, 1.0, 1.2]:
         x = px(tick)
@@ -413,29 +406,23 @@ def write_y_beta_r2_map() -> Path:
         family = row["family"]
         beta = f(row["beta"])
         r2 = f(row["r2"])
-        radius = 3.0 + 5.5 * max(0.0, min(1.0, (r2 - r2_min) / (r2_max - r2_min)))
+        point_x = px(beta)
+        label = short_label(row)
         if idx % 2 == 0:
             parts.append(f'<rect x="{left}" y="{y-row_step/2:.1f}" width="{plot_w}" height="{row_step:.1f}" fill="#eef3f8" fill-opacity="0.38"/>')
         if family != last_family:
             parts.append(f'<text x="58" y="{y+4:.1f}" font-size="14" font-family="Helvetica" font-weight="700" fill="{family_colors[family]}">{esc(family)}</text>')
             last_family = family
         parts.append(f'<rect x="175" y="{y-6:.1f}" width="8" height="12" fill="{family_colors[family]}"/>')
-        parts.append(f'<text x="193" y="{y+4:.1f}" font-size="11" font-family="Helvetica" fill="{INK}">{esc(short_label(row))}</text>')
-        parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{px(beta):.1f}" y2="{y:.1f}" stroke="#b9c2cc" stroke-width="1"/>')
-        parts.append(f'<circle cx="{px(beta):.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{r2_color(r2)}" fill-opacity="0.78" stroke="#ffffff" stroke-width="0.8"/>')
-        parts.append(f'<text x="{px(beta)+radius+5:.1f}" y="{y+3.5:.1f}" font-size="9" font-family="Helvetica" fill="{MUTED}">R2={r2:.2f}</text>')
-
-    legend_x = width - 295
-    legend_y = 55
-    parts.append(f'<rect x="{legend_x}" y="{legend_y}" width="230" height="110" rx="6" fill="#fff8ed" stroke="#e4c99c"/>')
-    parts.append(f'<text x="{legend_x+16}" y="{legend_y+24}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">R2 classes</text>')
-    for idx, (label, color) in enumerate([(">= 0.82", GREEN), ("0.75-0.82", TEAL), ("0.68-0.75", GOLD), ("< 0.68", RUST)]):
-        y = legend_y + 45 + idx * 16
-        parts.append(f'<circle cx="{legend_x+22}" cy="{y}" r="5" fill="{color}" fill-opacity="0.78"/>')
-        parts.append(f'<text x="{legend_x+36}" y="{y+4}" font-size="11" font-family="Helvetica" fill="{INK}">{esc(label)}</text>')
+        parts.append(f'<text x="193" y="{y+4:.1f}" font-size="11" font-family="Helvetica" fill="{INK}">{esc(label)}</text>')
+        parts.append(f'<line x1="{left-20}" y1="{y:.1f}" x2="{point_x-9:.1f}" y2="{y:.1f}" stroke="#aeb8c2" stroke-width="1.1"/>')
+        parts.append(f'<path d="M {point_x-9:.1f} {y:.1f} l -6 -4 l 0 8 z" fill="#aeb8c2"/>')
+        parts.append(f'<circle cx="{point_x:.1f}" cy="{y:.1f}" r="5.2" fill="{family_colors[family]}" fill-opacity="0.84" stroke="#ffffff" stroke-width="0.8"/>')
+        parts.append(f'<text x="{point_x+8:.1f}" y="{y-5:.1f}" font-size="9" font-family="Helvetica" fill="{family_colors[family]}">{esc(label)}</text>')
+        parts.append(f'<text x="{left+plot_w+31}" y="{y+3.5:.1f}" font-size="10" font-family="Helvetica" fill="{INK}">{r2:.2f}</text>')
 
     parts.append(f'<text x="{left+plot_w/2}" y="{height-34}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}">scaling exponent beta in log Y_i = alpha_Y + beta_Y log N_i + epsilon_i</text>')
-    parts.append(f'<text x="58" y="{height-34}" font-size="12" font-family="Helvetica" fill="{MUTED}">Rows grouped by Y family; only retained outcomes are shown.</text>')
+    parts.append(f'<text x="58" y="{height-34}" font-size="12" font-family="Helvetica" fill="{MUTED}">Rows grouped by Y family; right column is the fitted R2 for the same Y.</text>')
     return svg(OUT_DIR / "phase1_y_beta_r2_map.svg", "".join(parts), width, height)
 
 
@@ -691,7 +678,7 @@ def write_guide(paths: list[Path]) -> Path:
                 "",
                 f"![Y beta R2 map]({rels[5]})",
                 "",
-                "This figure opens the retained catalog. Each row is one retained outcome `Y`; horizontal position is its fitted exponent `beta`; point color and size summarize fit quality `R2`.",
+                "This figure opens the retained catalog. Each row is one retained outcome `Y`; the arrow points to its fitted exponent `beta`; the right-side numeric column gives the corresponding `R2`.",
                 "",
                 "## 7. Fitability",
                 "",
