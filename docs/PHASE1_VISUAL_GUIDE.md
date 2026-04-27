@@ -34,13 +34,19 @@ This multi-panel figure keeps cities visible instead of collapsing them into one
 
 The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.
 
-## 6. Fitability
+## 6. Y, Beta, and R2
+
+![Y beta R2 map](figures/phase1/phase1_y_beta_r2_map.svg)
+
+This figure opens the retained catalog. Each row is one retained outcome `Y`; horizontal position is its fitted exponent `beta`; point color and size summarize fit quality `R2`.
+
+## 7. Fitability
 
 ![Fitability map](figures/phase1/phase1_fitability_map.svg)
 
 This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.
 
-## 7. Exponents Across Retained Outcomes
+## 8. Exponents Across Retained Outcomes
 
 ![Beta and R2 catalog](figures/phase1/phase1_beta_r2_catalog.svg)
 

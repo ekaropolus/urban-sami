@@ -343,6 +343,102 @@ def write_outcome_catalog() -> Path:
     return svg(OUT_DIR / "phase1_outcome_catalog.svg", "".join(parts), width, height)
 
 
+def write_y_beta_r2_map() -> Path:
+    retained = [
+        row
+        for row in read_csv(CURATED)
+        if row["family"] in {"total", "per_ocu", "size_class", "scian2", "scian3"}
+    ]
+    family_order = {"total": 0, "per_ocu": 1, "size_class": 2, "scian2": 3, "scian3": 4}
+    retained.sort(key=lambda row: (family_order[row["family"]], -f(row["r2"]), f(row["beta"])))
+    family_colors = {
+        "total": INK,
+        "per_ocu": BLUE,
+        "size_class": TEAL,
+        "scian2": RUST,
+        "scian3": GOLD,
+    }
+
+    width, height = 1450, 1750
+    left, top, right, bottom = 420, 125, 120, 95
+    plot_w = width - left - right
+    plot_h = height - top - bottom
+    beta_min, beta_max = 0.55, 1.25
+    r2_min, r2_max = 0.55, 0.87
+    row_step = plot_h / max(1, len(retained) - 1)
+
+    def px(beta: float) -> float:
+        clipped = min(max(beta, beta_min), beta_max)
+        return left + ((clipped - beta_min) / (beta_max - beta_min)) * plot_w
+
+    def r2_color(r2: float) -> str:
+        if r2 >= 0.82:
+            return GREEN
+        if r2 >= 0.75:
+            return TEAL
+        if r2 >= 0.68:
+            return GOLD
+        return RUST
+
+    def short_label(row: dict[str, str]) -> str:
+        label = row["category_label"] or row["category"]
+        family = row["family"]
+        if family == "total":
+            label = "all establishments"
+        elif family in {"scian2", "scian3"}:
+            label = f'{family.upper()} {row["category"]}'
+        if len(label) > 42:
+            label = label[:39] + "..."
+        return label
+
+    parts = frame(
+        width,
+        height,
+        "Phase I: each retained Y has its own beta and R2",
+        "Each row is one retained outcome. Horizontal position is beta; point color and size summarize R2.",
+    )
+    parts.append(f'<rect x="{left}" y="{top}" width="{plot_w}" height="{plot_h}" fill="#fbfdff" stroke="#8c939b"/>')
+
+    for tick in [0.6, 0.8, 1.0, 1.2]:
+        x = px(tick)
+        stroke = RUST if abs(tick - 1.0) < 1e-9 else GRID
+        dash = ' stroke-dasharray="6 5"' if abs(tick - 1.0) < 1e-9 else ""
+        parts.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top+plot_h}" stroke="{stroke}" stroke-width="1.2"{dash}/>')
+        parts.append(f'<text x="{x:.1f}" y="{top+plot_h+28}" text-anchor="middle" font-size="12" font-family="Helvetica" fill="{MUTED}">{tick:.1f}</text>')
+    parts.append(f'<text x="{px(1.0)+8:.1f}" y="{top+18}" font-size="12" font-family="Helvetica" fill="{RUST}">linear beta = 1</text>')
+
+    last_family = ""
+    for idx, row in enumerate(retained):
+        y = top + idx * row_step
+        family = row["family"]
+        beta = f(row["beta"])
+        r2 = f(row["r2"])
+        radius = 3.0 + 5.5 * max(0.0, min(1.0, (r2 - r2_min) / (r2_max - r2_min)))
+        if idx % 2 == 0:
+            parts.append(f'<rect x="{left}" y="{y-row_step/2:.1f}" width="{plot_w}" height="{row_step:.1f}" fill="#eef3f8" fill-opacity="0.38"/>')
+        if family != last_family:
+            parts.append(f'<text x="58" y="{y+4:.1f}" font-size="14" font-family="Helvetica" font-weight="700" fill="{family_colors[family]}">{esc(family)}</text>')
+            last_family = family
+        parts.append(f'<rect x="175" y="{y-6:.1f}" width="8" height="12" fill="{family_colors[family]}"/>')
+        parts.append(f'<text x="193" y="{y+4:.1f}" font-size="11" font-family="Helvetica" fill="{INK}">{esc(short_label(row))}</text>')
+        parts.append(f'<line x1="{left}" y1="{y:.1f}" x2="{px(beta):.1f}" y2="{y:.1f}" stroke="#b9c2cc" stroke-width="1"/>')
+        parts.append(f'<circle cx="{px(beta):.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{r2_color(r2)}" fill-opacity="0.78" stroke="#ffffff" stroke-width="0.8"/>')
+        parts.append(f'<text x="{px(beta)+radius+5:.1f}" y="{y+3.5:.1f}" font-size="9" font-family="Helvetica" fill="{MUTED}">R2={r2:.2f}</text>')
+
+    legend_x = width - 295
+    legend_y = 55
+    parts.append(f'<rect x="{legend_x}" y="{legend_y}" width="230" height="110" rx="6" fill="#fff8ed" stroke="#e4c99c"/>')
+    parts.append(f'<text x="{legend_x+16}" y="{legend_y+24}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">R2 classes</text>')
+    for idx, (label, color) in enumerate([(">= 0.82", GREEN), ("0.75-0.82", TEAL), ("0.68-0.75", GOLD), ("< 0.68", RUST)]):
+        y = legend_y + 45 + idx * 16
+        parts.append(f'<circle cx="{legend_x+22}" cy="{y}" r="5" fill="{color}" fill-opacity="0.78"/>')
+        parts.append(f'<text x="{legend_x+36}" y="{y+4}" font-size="11" font-family="Helvetica" fill="{INK}">{esc(label)}</text>')
+
+    parts.append(f'<text x="{left+plot_w/2}" y="{height-34}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}">scaling exponent beta in log Y_i = alpha_Y + beta_Y log N_i + epsilon_i</text>')
+    parts.append(f'<text x="58" y="{height-34}" font-size="12" font-family="Helvetica" fill="{MUTED}">Rows grouped by Y family; only retained outcomes are shown.</text>')
+    return svg(OUT_DIR / "phase1_y_beta_r2_map.svg", "".join(parts), width, height)
+
+
 def write_fitability_map() -> Path:
     rows = read_csv(FITABILITY)
     width, height = 1200, 820
@@ -591,15 +687,21 @@ def write_guide(paths: list[Path]) -> Path:
                 "",
                 "The project then stops treating total establishments as the only outcome. It tests and curates DENUE outcome families such as size bands, derived size classes, SCIAN2, and SCIAN3.",
                 "",
-                "## 6. Fitability",
+                "## 6. Y, Beta, and R2",
                 "",
-                f"![Fitability map]({rels[5]})",
+                f"![Y beta R2 map]({rels[5]})",
+                "",
+                "This figure opens the retained catalog. Each row is one retained outcome `Y`; horizontal position is its fitted exponent `beta`; point color and size summarize fit quality `R2`.",
+                "",
+                "## 7. Fitability",
+                "",
+                f"![Fitability map]({rels[6]})",
                 "",
                 "This plot explains why outcome curation was necessary. Some categories have strong fits and broad coverage; others are too sparse or weak to interpret as city scaling objects.",
                 "",
-                "## 7. Exponents Across Retained Outcomes",
+                "## 8. Exponents Across Retained Outcomes",
                 "",
-                f"![Beta and R2 catalog]({rels[6]})",
+                f"![Beta and R2 catalog]({rels[7]})",
                 "",
                 "Retained outcomes have different exponents and fit quality. Phase I therefore creates a family of scaling laws, not a single repeated result.",
                 "",
@@ -631,6 +733,7 @@ def main() -> int:
         write_residual_histogram(),
         write_sami_by_state_multipanel(),
         write_outcome_catalog(),
+        write_y_beta_r2_map(),
         write_fitability_map(),
         write_beta_r2_catalog(),
     ]
