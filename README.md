@@ -60,6 +60,8 @@ The default GitHub snapshot is intentionally light:
 
 Those large artifact folders are generated locally from the persistent experiment database and the scripts mapped in `PROJECT_MAP.md`. The exact rerun flow is documented in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 
+For the actual push flow, see [docs/GITHUB_UPLOAD.md](docs/GITHUB_UPLOAD.md).
+
 ## Parity Target
 
 The immediate mission is not feature breadth. It is parity.
