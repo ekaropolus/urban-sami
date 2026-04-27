@@ -11,14 +11,18 @@ The goal is simple: a reviewer should be able to start from a phase in the monog
   - [LaTeX](manuscript/final-multiscale-monograph-2026-04-25/main.tex)
 - Machine-readable crosswalk:
   - [docs/monograph-script-crosswalk.csv](docs/monograph-script-crosswalk.csv)
+- Equation-level traceability:
+  - [docs/EQUATION_TRACEABILITY.md](docs/EQUATION_TRACEABILITY.md)
+  - [docs/equation-traceability.csv](docs/equation-traceability.csv)
 
 ## How To Review This Repository
 
 1. Pick a phase in the monograph.
 2. Find the matching row below.
-3. Open the listed script or scripts.
-4. Open the corresponding `report.md` and CSV outputs in `reports/`.
-5. If the phase writes persistent results, inspect the listed `derived.*` or `experiments.*` tables in the independent experiment database.
+3. For a specific mathematical object, open `docs/EQUATION_TRACEABILITY.md`.
+4. Open the listed script or scripts.
+5. Open the corresponding `report.md` and CSV outputs in `reports/`.
+6. If the phase writes persistent results, inspect the listed `derived.*` or `experiments.*` tables in the independent experiment database.
 
 Most scripts can be run as:
 

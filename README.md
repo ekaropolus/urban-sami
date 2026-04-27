@@ -28,14 +28,17 @@ This keeps the repo aligned with urban scaling theory while still using coarse a
 
 ## GitHub Review Map
 
-For community review, the project now includes an explicit monograph-to-code crosswalk:
+For community review, the project now includes explicit monograph-to-code crosswalks:
 
-- [PROJECT_MAP.md](/home/hadox/cmd-center/platforms/research/urban-sami/PROJECT_MAP.md)
-- [docs/monograph-script-crosswalk.csv](/home/hadox/cmd-center/platforms/research/urban-sami/docs/monograph-script-crosswalk.csv)
+- [PROJECT_MAP.md](PROJECT_MAP.md)
+- [docs/monograph-script-crosswalk.csv](docs/monograph-script-crosswalk.csv)
+- [docs/EQUATION_TRACEABILITY.md](docs/EQUATION_TRACEABILITY.md)
+- [docs/equation-traceability.csv](docs/equation-traceability.csv)
 
 These files connect:
 
 - monograph phases
+- monograph equations and mathematical objects
 - executable scripts
 - report packs
 - persistent database tables
@@ -49,9 +52,10 @@ Suggested review workflow:
 
 1. open a phase in the monograph
 2. locate it in `PROJECT_MAP.md`
-3. open the listed script
-4. inspect the listed `reports/` pack
-5. verify the listed `derived.*` / `experiments.*` tables if the phase is DB-persistent
+3. locate the specific equation or mathematical object in `docs/EQUATION_TRACEABILITY.md`
+4. open the listed script
+5. inspect the listed `reports/` pack
+6. verify the listed `derived.*` / `experiments.*` tables if the phase is DB-persistent
 
 The default GitHub snapshot is intentionally light:
 

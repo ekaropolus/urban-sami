@@ -28,9 +28,10 @@ These folders are large, regenerated frequently, and in the later phases are lar
    - `manuscript/final-multiscale-monograph-2026-04-25/main.pdf`
 2. Open `PROJECT_MAP.md`.
 3. Find the matching phase.
-4. Inspect the listed script or scripts.
-5. If the generated report pack is not present locally, rerun it from the listed script.
-6. If the phase is DB-persistent, verify the listed `raw.*`, `derived.*`, or `experiments.*` tables.
+4. For equation-level review, open `docs/EQUATION_TRACEABILITY.md`.
+5. Inspect the listed script or scripts.
+6. If the generated report pack is not present locally, rerun it from the listed script.
+7. If the phase is DB-persistent, verify the listed `raw.*`, `derived.*`, or `experiments.*` tables.
 
 ## Database bootstrap
 
