@@ -1,0 +1,47 @@
+version: "0.1"
+kind: "geojson_indicator_sami"
+
+metadata:
+  workflow_id: "geojson_indicator_sami_demo"
+  title: "GeoJSON Indicator SAMI Demo"
+  description: "Assign DENUE-style points to polygon units, compute indicators, and fit SAMI."
+  country_code: "MX"
+
+data_sources:
+  polygons:
+    source_type: "geojson"
+    path: "../tests/fixtures/geojson/mini_polygons.geojson"
+  observations:
+    source_type: "denue_points_csv"
+    path: "../tests/fixtures/geojson/mini_points.csv"
+
+geometry_domains:
+  - domain_id: "geo_demo"
+    domain_type: "geojson_polygon"
+    unit_id_field: "unit_id"
+    unit_label_field: "unit_label"
+    parent_id_field: "parent_id"
+    population_field: "population"
+    households_field: "households"
+    area_km2_field: "area_km2"
+
+indicators:
+  - key: "denue_est_count"
+    enabled: true
+    scale_basis: "population"
+  - key: "denue_est_density_km2"
+    enabled: true
+    scale_basis: "population"
+
+models:
+  fit_methods:
+    - "ols"
+    - "auto"
+  bootstrap_iterations: 25
+  bootstrap_seed: 11
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: false

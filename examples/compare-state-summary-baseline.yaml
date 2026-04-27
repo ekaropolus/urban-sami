@@ -1,0 +1,36 @@
+version: "0.1"
+kind: "compare_csv_baseline"
+
+metadata:
+  workflow_id: "compare_state_summary_baseline"
+  title: "Compare State Summary Baseline"
+  description: "Compare a replayed state summary against the preserved Polisplexity baseline."
+  country_code: "MX"
+
+data_sources:
+  left:
+    source_type: "csv"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities/summary.csv"
+  right:
+    source_type: "csv"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities/summary.csv"
+
+compare:
+  key_columns:
+    - "n_field"
+    - "level"
+    - "filter_mode"
+    - "fit_method"
+  value_columns:
+    - "units"
+    - "alpha"
+    - "beta"
+    - "r2"
+    - "resid_std"
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: false
+

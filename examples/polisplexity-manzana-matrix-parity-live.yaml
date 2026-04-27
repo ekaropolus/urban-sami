@@ -1,0 +1,25 @@
+version: "0.1"
+kind: "polisplexity_matrix_parity"
+
+metadata:
+  workflow_id: "polisplexity_manzana_matrix_parity_live"
+  title: "Polisplexity Manzana Matrix Parity Live"
+  description: "Recompute manzana-level matrix summary from original Polisplexity exported unit tables."
+  country_code: "MX"
+
+data_sources:
+  summary:
+    source_type: "csv_summary"
+    path: "../../../polisplexity/core/data/sami_experiments/mx/matrix-y-denue_est_count-n-population-lvl-manzana-fit-ols-robust-poisson-negbin-auto-filt-raw-scope-cities-19001-14001-14002-19002-14003-plus187/20260315_221905/summary.csv"
+  units_dir:
+    source_type: "directory"
+    path: "../../../polisplexity/core/data/sami_experiments/mx/matrix-y-denue_est_count-n-population-lvl-manzana-fit-ols-robust-poisson-negbin-auto-filt-raw-scope-cities-19001-14001-14002-19002-14003-plus187/20260315_221905"
+
+compare:
+  numeric_tolerance: 0.000001
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: true

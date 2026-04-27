@@ -1,0 +1,22 @@
+version: "0.1"
+kind: "polisplexity_run_dir_parity"
+
+metadata:
+  workflow_id: "polisplexity_ageb_run_dir_parity_live"
+  title: "Polisplexity AGEB Run Directory Parity Live"
+  description: "Validate a completed live Polisplexity AGEB run directory directly."
+  country_code: "MX"
+
+data_sources:
+  run_dir:
+    source_type: "directory"
+    path: "../../../polisplexity/core/data/sami_experiments/mx/matrix-y-denue_est_count-n-population-lvl-ageb_u-fit-ols-robust-poisson-negbin-auto-filt-raw-scope-cities-11020-22014/20260315_221910"
+
+compare:
+  numeric_tolerance: 0.000001
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: true

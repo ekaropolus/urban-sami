@@ -1,0 +1,42 @@
+{
+  "request_kind": "matrix",
+  "origin": "codex-reset-20260315",
+  "generated_at_utc": "2026-03-15T22:19:05.781365+00:00",
+  "input_payload": {
+    "country": "MX",
+    "y_source": "denue_est_count",
+    "n_fields": [
+      "population"
+    ],
+    "fit_methods": [
+      "ols",
+      "robust",
+      "poisson",
+      "negbin",
+      "auto"
+    ],
+    "filter_modes": [
+      "raw"
+    ],
+    "export_units": true,
+    "top_k": 10,
+    "levels": [
+      "state"
+    ]
+  },
+  "normalized_params": {
+    "country": "MX",
+    "y_source": "denue_est_count",
+    "n_fields": "population",
+    "levels": "state",
+    "fit_methods": "ols,robust,poisson,negbin,auto",
+    "filter_modes": "raw",
+    "min_n": 30.0,
+    "trim_low_q": 0.0,
+    "trim_high_q": 0.995,
+    "top_k": 10,
+    "only_admin2_codes": "",
+    "output_dir": "/app/data/sami_experiments",
+    "export_units": true
+  }
+}

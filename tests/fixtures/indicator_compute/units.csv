@@ -1,0 +1,7 @@
+domain_id,unit_id,unit_label,parent_id,population,households,area_km2
+admin_ageb,admin_ageb:001,AGEB 001,,500,120,0.5
+admin_ageb,admin_ageb:002,AGEB 002,,1000,260,2.0
+hex_8,hex_8:abc,Hex ABC,,500,120,0.5
+hex_8,hex_8:def,Hex DEF,,1000,260,2.0
+geofence_demo,geofence_demo:g1,Geofence G1,,250,80,0.2
+

@@ -1,0 +1,2231 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{pdflscape}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=blue
+}
+
+\setstretch{1.08}
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\captionsetup{font=small,labelfont=bf}
+
+\newcommand{\SAMI}{\operatorname{SAMI}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Var}{\operatorname{Var}}
+\newcommand{\Cov}{\operatorname{Cov}}
+\newcommand{\Rtwo}{R^2}
+\newcommand{\adjR}{R^2_{\mathrm{adj}}}
+\newcommand{\dd}{\mathrm{d}}
+
+\title{\textbf{From a National City Scaling Law to a Multiscale Information-State Equation:\\
+A Final Experimental Monograph of the \texttt{urban-sami} Research Program}}
+\author{Working technical monograph generated from the \texttt{urban-sami} workflow}
+\date{25 April 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This document reconstructs, in a single mathematical narrative, the full experimental path of the \texttt{urban-sami} project on urban establishment scaling in Mexico. The starting point is the canonical Bettencourt-style city law
+\(
+Y = Y_0 N^\beta
+\)
+for total establishments. From that baseline, the workflow progressively opens new branches: a broad city-level catalog of outcomes \(Y\), grouped residual diagnostics, municipal mapping, a descent to intra-urban AGEB support, robustness checks across model families, unconstrained discovery of lawful AGEB subsets, cross-city comparison of internal structure, national OSM street-network extraction and persistence into PostGIS, topology-based classes, and a continuous city state equation in which the scaling exponent depends on network and support variables.
+
+This final version adds the multiscale closure suggested by the newer Bettencourt course. It introduces neighborhood-level information and spatial selection, a full national decomposition of economic information across the nested supports
+\(
+\text{manzana} \rightarrow \text{AGEB} \rightarrow \text{city},
+\)
+a city equation of state extended by internal information variables, a direct coarse-graining audit of the population-establishment law across supports, and a final synthesis linking the strengthening of the law under aggregation to the absorption of sub-AGEB heterogeneity.
+
+The monograph is intentionally comprehensive rather than concise. It keeps not only the retained models, but also the branches later criticized or reinterpreted, including why density-only formulations were treated as dimensionally opaque, why composition terms required caution, why municipality proved to be an imperfect proxy for built city, why topology classes were eventually replaced by continuous state variables, and why support change itself had to become an experimental object. The final picture is not a single universal closure. It is a multiscale statistical-physics interpretation in which the macro urban law is real, but emerges through coarse-graining over highly structured internal economies whose information content remains clearly visible at manzana scale and is only partially absorbed at AGEB scale.
+\end{abstract}
+
+\tableofcontents
+\clearpage
+
+\section{Motivation, scope, and experimental logic}
+
+The starting point of the project was classical urban scaling theory \citep{bettencourt2007growth,bettencourt2010urban,bettencourt2013origins,bettencourt2021ius}. At the city level, the canonical law is
+\begin{equation}
+Y_i = Y_0 N_i^\beta,
+\label{eq:canonical-power}
+\end{equation}
+or equivalently,
+\begin{equation}
+\log Y_i = \alpha + \beta \log N_i + \varepsilon_i,
+\qquad \alpha = \log Y_0.
+\label{eq:canonical-log}
+\end{equation}
+Here \(Y_i\) is an urban observable, \(N_i\) is city population, and \(\varepsilon_i\) is the size-adjusted log deviation.
+
+The initial question was classical: how well does total number of establishments scale with population across Mexican cities? Very quickly, however, that question generated a sequence of deeper ones:
+\begin{enumerate}[label=\textbf{Q\arabic*.},leftmargin=2.4em]
+\item Does the law survive decomposition across outcome families \(Y\)?
+\item Are residuals (\(\SAMI\)) merely leftovers, or do they contain recurrent structure?
+\item What happens when the support is changed from city to AGEB?
+\item If the law collapses inside the city, is the failure due to sparse data, wrong model family, wrong support, or latent regime mixing?
+\item Can lawful subsets of AGEBs be found algorithmically without imposing a spatial rule?
+\item If such subsets exist, do they share structural properties across cities?
+\item Do street-network topology and connectivity explain part of the observed heterogeneity?
+\item Are discrete topology classes enough, or does the problem require a continuous state equation?
+\end{enumerate}
+
+The project therefore evolved as a branching experimental program rather than a single fit. Each branch opened because the previous one generated a mismatch between theoretical expectation and empirical behavior. The monograph follows that chronology.
+
+\subsection{A map of the experimental branches}
+
+\begin{longtable}{p{0.09\textwidth}p{0.22\textwidth}p{0.31\textwidth}p{0.28\textwidth}}
+\toprule
+\textbf{Phase} & \textbf{Question} & \textbf{Model move} & \textbf{Why the next branch opened} \\
+\midrule
+\endhead
+I & City-scale national law & Fit \(E \sim N^\beta\); expand \(Y\) catalog & Aggregate law was strong, but decomposition across \(Y\) became necessary \\
+II & Residual structure & Compute \(\SAMI\), grouped diagnostics, state maps & Strong baseline did not kill large and recurrent residuals \\
+III & Intra-urban extension & Repeat scaling at AGEB support & Law weakened sharply; needed to know whether this was noise or mechanism \\
+IV & Failure analysis & Robustness checks, variance decomposition, centrality correction & Population alone was insufficient inside the city \\
+V & Latent lawful subsets & Search for AGEB subsets with strong fit & City interior looked like a mixture of regimes rather than pure failure \\
+VI & Cross-city internal structure & Compare internal signatures across cities and against \(\SAMI\) & Similar city-level \(\SAMI\) did not guarantee similar interiors \\
+VII & Connectivity and topology & Bring OSM street networks into the workflow & Needed a structural language beyond support and counts \\
+VIII & Return to the first branch & Fix \(Y\), vary predictors one at a time, critique previous extensions & Some earlier predictors mixed response-derived composition or dimensionally opaque ratios \\
+IX & Continuous state equation & Replace classes with continuous network state variables & Discrete classes moved slopes, but we wanted a continuous analogue \\
+X & Neighborhood information & Measure spatial selection with \(I(J;\Lambda)\), \(D(j)\), \(D(\ell)\) & Needed a Bettencourt-new language for internal organization \\
+XI & Multiscale information decomposition & Split \(I(M;\Lambda)\) into between-AGEB and within-AGEB parts & Needed to know at which support the internal economy is really organized \\
+XII & Coarse-graining of the law & Track \(\beta(r)\), \(R^2(r)\), and \(\sigma_\varepsilon(r)\) from manzana to city & Needed a direct statistical-physics audit of emergence under aggregation \\
+XIII & Final multiscale synthesis & Link fit gain under aggregation to absorbed internal information & Needed a closure tying Bettencourt-new information to the emergence of the macro law \\
+\bottomrule
+\end{longtable}
+
+\section{State of the art, theoretical baseline, and notation}
+
+\subsection{What we inherit from Bettencourt, and what changes here}
+
+The classical Bettencourt program studies average urban scaling laws of the form
+\begin{equation}
+Y_i = Y_0 N_i^\beta,
+\end{equation}
+or in logs,
+\begin{equation}
+\log Y_i = \alpha + \beta \log N_i + \varepsilon_i.
+\end{equation}
+In that framework, the main object is the macro law relating an urban observable \(Y_i\) to city population \(N_i\), while the residual \(\varepsilon_i\) captures city-specific deviation from the expected size trend \citep{bettencourt2007growth,bettencourt2010urban,bettencourt2013origins}.
+
+The newer Bettencourt course pushes further in two directions \citep{bettencourt2024lecture10,bettencourt2024lecture11,bettencourt2024lecture12,bettencourt2024lecture18}. First, it treats deviations from scaling as structured objects with their own statistical content. Second, it moves inside the city by asking whether neighborhoods carry information about internal urban differentiation. In that newer language, the relevant object is no longer only the city average law, but also the joint distribution of internal locations and internal classes.
+
+Our project follows that shift, but with one important substitution. Because our core empirical field is the economy of establishments rather than household income, the internal classes are not income bins. They are economic categories derived from DENUE: sector classes, size classes, and related business descriptors. In that sense, the present monograph can be read as an economic and multiscale extension of the Bettencourt-new neighborhood-information program.
+
+\subsection{Canonical city law and size-adjusted deviations}
+
+The core city-scale law is Eq.~\eqref{eq:canonical-log}. For total establishments, we denote
+\begin{equation}
+E_i = \text{total establishments in city } i,
+\qquad
+N_i = \text{population of city } i.
+\end{equation}
+The fitted expectation is
+\begin{equation}
+\widehat{E}_i = e^\alpha N_i^\beta.
+\end{equation}
+
+Throughout the project we used the raw log deviation as the primary residual quantity:
+\begin{equation}
+\SAMI_i
+=
+\log E_i - \log \widehat{E}_i
+=
+\log\!\left(\frac{E_i}{\widehat{E}_i}\right).
+\label{eq:sami-def}
+\end{equation}
+
+In several diagnostic contexts we also kept a standardized score,
+\begin{equation}
+z_i = \frac{\SAMI_i}{\sigma_\varepsilon},
+\end{equation}
+where \(\sigma_\varepsilon\) is the residual standard deviation of the fitted city law, but the canonical score in this project remained the raw log deviation in Eq.~\eqref{eq:sami-def}.
+
+\subsection{How to read the supports and indices}
+
+The monograph moves repeatedly across three nested spatial supports:
+\begin{equation}
+\text{manzana} \subset \text{AGEB} \subset \text{city}.
+\end{equation}
+These supports are administrative or geometric containers, not abstract symbols. A \emph{manzana} is a city block; an \emph{AGEB} is an urban census tract-like unit defined by INEGI; and \emph{city} refers to the municipal-level city support used throughout the national workflow.
+
+We use indices consistently:
+\begin{align}
+i &:\ \text{city},\\
+a &:\ \text{AGEB},\\
+m &:\ \text{manzana},\\
+j &:\ \text{generic spatial unit at the support currently under study},\\
+\ell &:\ \text{economic category},\\
+q &:\ \text{generic coarse-grained block when units are aggregated}.
+\end{align}
+
+This matters because the same mathematical form is often reused at different scales. For example,
+\begin{equation}
+\log Y = \alpha + \beta \log N + \varepsilon
+\end{equation}
+means different empirical objects depending on whether \(Y\) and \(N\) are measured for cities, AGEBs, or manzanas. Throughout the document, the index and the surrounding text indicate the support.
+
+\subsection{Competing size variables and support variables}
+
+Later branches required additional notation:
+\begin{align}
+D_i &= \text{occupied dwellings in city } i,\\
+A_i &= \text{support area of city } i \text{ in km}^2,\\
+\rho_i^{(N)} &= N_i/A_i,\\
+\rho_i^{(D)} &= D_i/A_i.
+\end{align}
+
+At AGEB scale, we use subscript \(a\):
+\begin{equation}
+E_a, \; N_a, \; A_a, \; \rho_a = N_a/A_a.
+\end{equation}
+
+For street-network variables derived from OSM and later persisted into PostGIS, we use:
+\begin{align}
+B_i &= \text{boundary-entry edges per km of city boundary},\\
+S_i &= \text{street density in km per km}^2,\\
+J_i &= \text{intersection density per km}^2,\\
+K_i &= \text{mean node degree of the street network},\\
+C_i &= \text{circuity of the street network}.
+\end{align}
+
+\subsection{Variable dictionary and units}
+
+\begin{longtable}{p{0.14\textwidth}p{0.43\textwidth}p{0.16\textwidth}p{0.21\textwidth}}
+\toprule
+\textbf{Symbol} & \textbf{Meaning} & \textbf{Typical unit} & \textbf{Derived from} \\
+\midrule
+\endhead
+\(E_i\) & Total establishments in city \(i\) & count & DENUE points aggregated to city \\
+\(E_a\) & Total establishments in AGEB \(a\) & count & DENUE points aggregated to AGEB \\
+\(E_m\) & Total establishments in manzana \(m\) & count & DENUE points aggregated to manzana \\
+\(N_i,N_a,N_m\) & Population at city, AGEB, or manzana support & persons & INEGI population units \\
+\(D_i,D_a,D_m\) & Occupied dwellings at city, AGEB, or manzana support & dwellings & INEGI housing fields \\
+\(A_i,A_a,A_m\) & Support area & km\(^2\) & projected geometry area \\
+\(\rho^{(N)}\) & Population density \(N/A\) & persons per km\(^2\) & derived ratio \\
+\(\rho^{(D)}\) & Dwelling density \(D/A\) & dwellings per km\(^2\) & derived ratio \\
+\(B_i\) & Boundary-entry edges normalized by perimeter & edges per km & OSM street graph and support boundary \\
+\(S_i\) & Street density & km per km\(^2\) & total street length divided by area \\
+\(J_i\) & Intersection density & intersections per km\(^2\) & node/intersection counts divided by area \\
+\(K_i\) & Mean street-network degree & dimensionless & OSM node degrees \\
+\(C_i\) & Circuity & dimensionless & OSM path geometry ratio \\
+\(\SAMI_i\) & Log residual of the city law & log points & fitted city law \\
+\(I(J;\Lambda)\) & Mutual information between location and economic category & nats & category counts by support \\
+\(D(j)\) & Information carried by one unit relative to city baseline & nats & local category profile \\
+\(D(\ell)\) & Spatial localization of one category & nats & category footprint across units \\
+\(H(j)\) & Entropy of local economic mix & nats & local category shares \\
+\bottomrule
+\end{longtable}
+
+\subsection{What counts as a successful extension?}
+
+At every stage, an extension was considered meaningful only if it passed at least one of three tests:
+\begin{enumerate}[label=(\alph*),leftmargin=2.0em]
+\item it increased explanatory power \((\adjR\) or \(R^2)\) without merely redefining the response variable;
+\item it generated a sharper and more interpretable residual structure;
+\item it revealed latent heterogeneity that the previous branch had collapsed.
+\end{enumerate}
+
+This criterion matters because several exploratory paths improved fit but were later judged conceptually weak. The monograph documents those cases explicitly.
+
+\section{Data architecture and independent workflow}
+
+\subsection{Primary data sources}
+
+The empirical workflow combines three data systems:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item DENUE bulk establishment microdata from INEGI \citep{denue}, providing establishment locations and categorical attributes.
+\item Official INEGI administrative and population supports, including municipality/city and urban AGEB supports \citep{inegi_catalogo}.
+\item OpenStreetMap street networks extracted through OSMnx \citep{boeing2017osmnx,openstreetmap}.
+\end{enumerate}
+
+The project deliberately reconstructs all quantities from raw inputs rather than using platform-level exports. Population, occupied dwellings, administrative geometries, establishment assignments, AGEB supports, and street-network metrics were all independently loaded into the research database.
+
+\subsection{How the main variables are constructed from persistent data}
+
+The monograph uses compact notation, but the variables are concrete aggregates built from persistent database tables. For establishments, the basic operation is always a point count. If \(p\) indexes individual DENUE establishments, then
+\begin{equation}
+E_i = \sum_{p \in i} 1,
+\qquad
+E_a = \sum_{p \in a} 1,
+\qquad
+E_m = \sum_{p \in m} 1.
+\end{equation}
+If \(\ell\) is an economic class, then
+\begin{equation}
+y_{ij\ell} = \sum_{p \in (j,\ell)} 1
+\end{equation}
+is simply the number of establishments of class \(\ell\) located in support unit \(j\).
+
+Population and occupied dwellings are read from INEGI support tables already persisted in the database. When a higher support is needed, they are aggregated additively:
+\begin{equation}
+N_i = \sum_{u \in i} N_u,
+\qquad
+D_i = \sum_{u \in i} D_u,
+\end{equation}
+where \(u\) can be a manzana or an AGEB depending on the branch.
+
+Areas are measured from persisted geometries after projection to metric coordinates:
+\begin{equation}
+A_s = \mathrm{Area}(\mathrm{geom}_s),
+\end{equation}
+for support \(s\in\{i,a,m\}\). Densities then follow directly:
+\begin{equation}
+\rho_s^{(N)} = \frac{N_s}{A_s},
+\qquad
+\rho_s^{(D)} = \frac{D_s}{A_s}.
+\end{equation}
+
+Street-network variables are built from the persisted OSM graph for each city. If \(L_i\) is total street length, \(X_i\) is the number of intersections, \(P_i\) is support perimeter, and \(n_i\) is node count, then the normalized quantities used throughout the monograph are
+\begin{equation}
+S_i = \frac{L_i}{A_i},
+\qquad
+J_i = \frac{X_i}{A_i},
+\qquad
+B_i = \frac{\text{boundary-entry edges}_i}{P_i},
+\qquad
+K_i = \frac{\sum_{v\in V_i}k_v}{n_i}.
+\end{equation}
+
+This derivation layer is important for interpretation. It means that every symbol in the later equations refers to a reproducible quantity already persisted in the research database, not to an ad hoc spreadsheet field.
+
+\subsection{Database logic}
+
+The database logic evolved in stages. Initially the workflow was city- and AGEB-count oriented. Later, after connectivity emerged as a candidate explanatory layer, the street-network system was persisted as a first-class GIS object. By the end of the current program the national network layer contained:
+\begin{itemize}
+\item \(2478\) city supports,
+\item \(2478\) city-level network metric rows,
+\item \(5{,}718{,}334\) OSM nodes,
+\item \(14{,}742{,}848\) OSM edges.
+\end{itemize}
+
+Those objects live in the experimental GIS database under the \texttt{derived} and \texttt{experiments} schemas and are no longer dependent on ephemeral OSM cache files.
+
+\subsection{Methodological principle}
+
+The workflow was not ``fit everything and keep the best''. It followed a stricter sequence:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item fit the canonical city law;
+\item test whether decomposition across outcome definitions is scientifically interpretable;
+\item descend in support only after the city law is understood;
+\item open structural extensions only once failure is demonstrated, not pre-assumed;
+\item treat residuals as data rather than as nuisance;
+\item reject extensions that blur predictor and response or violate dimensional clarity.
+\end{enumerate}
+
+\section{Phase I: National city law and expansion of the outcome catalog}
+
+\subsection{The first city law}
+
+The first experiment was the simplest possible city law:
+\begin{equation}
+\log E_i = \alpha + \beta \log N_i + \varepsilon_i.
+\label{eq:city-total-law}
+\end{equation}
+
+For \(2469\) Mexican cities with positive population and establishment count, the baseline fit yielded
+\begin{equation}
+\widehat{\beta}_{\mathrm{city}} = 0.9496,
+\qquad
+\adjR = 0.8460.
+\end{equation}
+
+This did two things. First, it confirmed that the Mexican city system exhibits a strong near-linear establishment law. Second, it created the reference residual field \(\SAMI_i\) in Eq.~\eqref{eq:sami-def}, which later became central to almost every branch.
+
+\subsection{From one \(Y\) to many \(Y\)'s}
+
+The next move was conceptually simple but methodologically decisive: stop treating total establishments as the only \(Y\). Instead, generate a large catalog of city-scale outcome variables:
+\begin{equation}
+\left\{
+Y_i^{(f,c)}
+\right\},
+\end{equation}
+indexed by family \(f\) and category \(c\), and fit
+\begin{equation}
+\log Y_i^{(f,c)} = \alpha_{f,c} + \beta_{f,c}\log N_i + \varepsilon_{i}^{(f,c)}.
+\label{eq:family-law}
+\end{equation}
+
+The main outcome families were:
+\begin{itemize}
+\item total establishments;
+\item DENUE employment-size bands \texttt{per\_ocu};
+\item derived size classes \texttt{size\_class};
+\item SCIAN 2-digit sectors;
+\item SCIAN 3-digit categories.
+\end{itemize}
+
+The curated city catalog retained \(71\) interpretable \(Y\)'s:
+\begin{itemize}
+\item \(1/1\) total,
+\item \(7/7\) \texttt{per\_ocu},
+\item \(4/4\) \texttt{size\_class},
+\item \(20/23\) SCIAN 2-digit,
+\item \(39/91\) SCIAN 3-digit.
+\end{itemize}
+
+At the family level:
+\begin{itemize}
+\item \texttt{total}: median retained \(\beta = 0.9496\), median retained \(R^2 = 0.8460\);
+\item \texttt{per\_ocu}: median retained \(\beta = 0.9694\), median retained \(R^2 = 0.7570\);
+\item \texttt{size\_class}: median retained \(\beta = 0.9749\), median retained \(R^2 = 0.7765\);
+\item \texttt{scian2}: median retained \(\beta = 0.9326\), median retained \(R^2 = 0.7367\);
+\item \texttt{scian3}: median retained \(\beta = 0.9023\), median retained \(R^2 = 0.7169\).
+\end{itemize}
+
+\subsection{Why outcome curation was necessary}
+
+This was the first place where the project moved from a single law toward a real empirical program. The reason was not cosmetic. Once the catalog was expanded, it became clear that not every category is equally ``scalable'' in the city sense. We therefore created a fitability logic based on:
+\begin{equation}
+\mathcal{F}_{f,c}
+=
+\Bigl(
+n_{f,c},
+\mathrm{coverage}_{f,c},
+\mathrm{zero\_rate}_{f,c},
+R^2_{f,c},
+\mathrm{family\ support}
+\Bigr),
+\end{equation}
+and assigned interpretive classes such as strong, usable, exploratory, and unfit.
+
+This step references the core scaling framework \citep{bettencourt2010urban} but extends it methodologically: before interpreting residuals, one must know whether the law itself is defensible for a given \(Y\).
+
+\subsection{Grouped city comparisons and residual diagnostics}
+
+Once Eq.~\eqref{eq:family-law} existed for many \(Y\)'s, we generated grouped city profiles:
+\begin{itemize}
+\item by population and establishment quantiles;
+\item by city size bands;
+\item by state;
+\item by recurrent high-\(\SAMI\) and low-\(\SAMI\) profiles.
+\end{itemize}
+
+These grouped diagnostics were not new laws. They were organized ways of viewing the residual field. The key conceptual shift was:
+\begin{equation}
+\text{Strong fit} \;\not\Rightarrow\; \text{unstructured residuals}.
+\end{equation}
+
+That observation opened the mapping branch and later the cross-city \(\SAMI\) branch.
+
+\paragraph{Reproducibility inside the phase.}
+The city baseline and outcome-catalog branch can be rerun directly with
+\texttt{scripts/run\_independent\_city\_baseline.py},
+\texttt{scripts/run\_city\_y\_fitability\_audit.py},
+\texttt{scripts/run\_city\_y\_curated\_results\_pack.py},
+and
+\texttt{scripts/run\_city\_grouped\_profiles.py}.
+The raw ingredients are the persistent database tables
+\texttt{raw.population\_units} at city level and
+\texttt{raw.denue\_establishments}.
+In other words, Eq.~\eqref{eq:city-total-law} is not a symbolic template: it is the regression obtained after counting establishments by city and matching those counts to persisted INEGI population totals.
+
+\section{Phase II: Spatialized city residuals and the first mapping branch}
+
+\subsection{What was mapped, and why mapping mattered}
+
+Once the baseline city law existed, the next move was not to fit a new regression but to spatialize the residual field already defined in Eq.~\eqref{eq:sami-def}. For any city \(i\) and any outcome definition \(Y\), we computed
+\begin{equation}
+\widehat{Y}_i = \exp\!\left(\alpha+\beta\log N_i\right),
+\end{equation}
+and then
+\begin{equation}
+\SAMI_i^{(Y)} = \log\!\left(\frac{Y_i}{\widehat{Y}_i}\right).
+\label{eq:phase2-sami}
+\end{equation}
+This is the quantity that was mapped. No new theory was imposed in this phase. The point was to make visible the spatial organization of the residuals that the national city law leaves behind.
+
+This distinction matters. A fit such as Eq.~\eqref{eq:city-total-law} says that a large share of cross-city variation in establishments is explained by population. But it says nothing about whether the remaining deviation field is spatially smooth, clustered, regionalized, or support-dependent. Mapping is the simplest way to ask that question.
+
+\subsection{From one residual to a residual atlas}
+
+The first map branch did not stop at one national choropleth. It produced an atlas of residual views:
+\begin{itemize}
+\item a national municipal map of total-establishment \(\SAMI\);
+\item one total-\(\SAMI\) map per state;
+\item selected cross-city maps for `micro', retail (\texttt{SCIAN 46}), and professional services (\texttt{SCIAN 54});
+\item a signal-class map separating recurrent upper, recurrent lower, and weaker residual regimes across families.
+\end{itemize}
+
+Mathematically, the total-\(\SAMI\) map is the field
+\begin{equation}
+i \mapsto \SAMI_i^{(\text{total})},
+\end{equation}
+painted over the official municipal geometry assigned to city \(i\). The sectoral maps use the same construction, but replace \(Y_i\) by the family-specific category count. The signal-class map is not a new regression either. It is a deterministic reclassification of the city-by-\(Y\) residual tables, built from repeated positive or negative residual evidence across categories.
+
+\subsection{The city-by-\(Y\) residual system became a new object}
+
+This phase also created a new persistent comparison object:
+\begin{equation}
+\left\{
+\SAMI_i^{(Y)}
+:
+i \in \mathcal{C},
+\;
+Y \in \mathcal{Y}_{\mathrm{fitted}}
+\right\}.
+\end{equation}
+Instead of holding only one residual vector for total establishments, the workflow now held a city-by-category residual system over all interpretable fitted outcomes. In the final comparison pack this meant:
+\begin{itemize}
+\item \(2478\) city summary rows,
+\item \(926{,}166\) positive city-by-\(Y\) residual rows,
+\item \(1654\) fitted outcome definitions \(Y\),
+\item \(35\) generated category dossiers for especially interpretable families.
+\end{itemize}
+
+That expansion matters physically because a single macro law can hide very different residual behavior across economic fields. By turning \(\SAMI_i^{(Y)}\) into a browseable matrix system, the project moved from ``one law with one residual'' toward a multi-observable residual structure.
+
+\subsection{How city comparisons were formalized}
+
+This branch also forced an important methodological clarification. When comparing cities for a fixed outcome \(Y\), the correct object is \(\SAMI_i^{(Y)}\), not the system-level exponent \(\beta_Y\). The latter belongs to the regression for the whole urban system, not to one city. This is why the city-by-\(Y\) comparison pack fixed the fitted law for each \(Y\) and then computed:
+\begin{equation}
+\widehat{Y}_i^{(Y)} = \exp\!\left(\alpha_Y+\beta_Y\log N_i\right),
+\qquad
+\SAMI_i^{(Y)} = \log\!\left(\frac{Y_i^{(Y)}}{\widehat{Y}_i^{(Y)}}\right).
+\end{equation}
+
+For browsing within a family, cities were then ranked by
+\begin{equation}
+\operatorname{rank}_Y(i)
+\end{equation}
+and, when a normalized comparison was useful, by a standardized residual
+\begin{equation}
+z_i^{(Y)} = \frac{\SAMI_i^{(Y)}}{\sigma_{\varepsilon,Y}}.
+\end{equation}
+
+The conceptual gain is that residual mapping became a disciplined comparison workflow rather than a visual appendix. We were no longer only asking ``where are the high residuals?'' but also ``for which \(Y\), relative to which fitted law, and with what residual width?''
+
+\subsection{Why the comparison rules had to be explicit}
+
+This phase is where the project first had to police its own interpretation. Three rules became necessary.
+
+First, cities should be compared within the same \(Y\). A residual for total establishments is not commensurable, in raw magnitude, with a residual for a rare sector if the two fitted systems have different residual widths.
+
+Second, \(\beta_Y\) is a property of the fitted urban system for outcome \(Y\), not a property of city \(i\). So one does not compare two cities by \(\beta_Y\); one compares them by \(\SAMI_i^{(Y)}\) or, if normalization is needed, by
+\begin{equation}
+z_i^{(Y)} = \frac{\SAMI_i^{(Y)}}{\sigma_{\varepsilon,Y}}.
+\end{equation}
+
+Third, zeros remain informative as observed absence, but the raw log residual is only defined where the observed count is positive. This is why the comparison pack stores several different matrix views: observed counts, canonical \(\SAMI\), standardized residuals, and within-\(Y\) ranks.
+
+Methodologically, these rules later made the topology and multiscale branches cleaner, because they prevented us from casually treating system-level coefficients as city-level attributes.
+
+\subsection{What the maps revealed empirically}
+
+The national total-\(\SAMI\) maps made two things visible immediately.
+
+First, the residual field was not geographically featureless. Some states and subregions accumulated repeated positive or negative deviations, and those patterns reappeared in the state-by-state maps. This reinforced the idea that strong \(\adjR\) at city scale does not imply meaningless residuals.
+
+Second, the maps exposed a support problem that did not appear in the scalar law itself: municipality is often not the same object as built city. For large municipalities such as Hermosillo, the municipal polygon contains extensive desert, rural, or otherwise non-urban territory even though the fitted city law treats the municipality as a single urban observation.
+
+Formally, the problem can be stated as follows. The scaling law is fitted on an administrative unit \(u_i\), but the morphological support relevant to street connectivity, built-up fabric, and internal interaction may be a narrower object \(u_i^\ast\):
+\begin{equation}
+u_i \neq u_i^\ast.
+\label{eq:support-mismatch}
+\end{equation}
+
+This is one of the first places where visualization changed the theory. The law itself had been fitted correctly on the unit available at national scale, but the map made obvious that the support carried an interpretation problem once geometry started to matter.
+
+\subsection{Why Hermosillo and similar cases mattered}
+
+The support critique sharpened later, but the logic started here. In cities such as Hermosillo, the mapped municipal support contains large non-built zones. A scalar city law can tolerate this because it only sees one row per city. A spatial branch cannot. Once the residual is drawn on the polygon, the observer immediately sees that the support is partly urban and partly not.
+
+This is why Phase II should not be read as cosmetic cartography. It is where the administrative support begins to break its own interpretive cover. The city law is still fitted on the right national unit for that branch, but the map announces that later geometric and network arguments will have to distinguish between administrative support and built support.
+
+\subsection{What scientific products came out of this branch}
+
+Phase II therefore produced four things at once:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item a national municipal field of total-establishment residuals;
+\item a state-by-state residual atlas for rapid regional comparison;
+\item a city-by-\(Y\) residual comparison system with rankings, standardized residuals, and category dossiers;
+\item an explicit warning that support geometry would become a theoretical issue later in the program.
+\end{enumerate}
+
+That is why this phase is a real branch and not merely a visualization appendix. It is the first place where the project learns that residuals have geography and that geography destabilizes naive support interpretation.
+
+\subsection{Why this branch mattered for the rest of the program}
+
+Phase II is easy to underestimate because it does not introduce a new parametric model. But scientifically it did three heavy jobs.
+
+First, it established \(\SAMI\) as an object worthy of study in its own right. Without this branch, later questions about cross-city residual classes, topology-conditioned residuals, or lawful subsets would have looked arbitrary.
+
+Second, it forced the distinction between \emph{scalar fit} and \emph{spatial interpretation}. A city law can be statistically strong and still be geometrically misleading if its support is too coarse.
+
+Third, it prepared the OSM and support-critique branches. Once the municipal polygons were drawn, it became impossible to pretend that ``city'' was always identical to ``built city.'' Later network extractions, especially in large municipalities, would inherit exactly this issue.
+
+\paragraph{Reproducibility inside the phase.}
+The mapping branch is reproduced with
+\texttt{scripts/run\_city\_y\_sami\_comparison\_pack.py},
+\texttt{scripts/run\_city\_map\_pack.py},
+and
+\texttt{scripts/run\_city\_state\_map\_pack.py}.
+The first script computes the fixed-law city-by-\(Y\) residual tables, rankings, and dossiers. The second builds the national municipal residual atlas from official INEGI municipal geometries. The third generates the lighter national total-\(\SAMI\) image and one state map per state. The relevant persistent inputs are:
+\begin{itemize}
+\item \texttt{raw.population\_units} at city level,
+\item \texttt{raw.denue\_establishments},
+\item official municipal geometries cached in \texttt{data/raw/inegi\_municipal\_geojson}.
+\end{itemize}
+Representative outputs live in:
+\begin{itemize}
+\item \texttt{reports/city-y-sami-comparison-pack-2026-04-21},
+\item \texttt{reports/city-map-pack-2026-04-22},
+\item \texttt{reports/city-state-map-pack-2026-04-22}.
+\end{itemize}
+
+\section{Phase III: First descent to intra-urban AGEB support}
+
+\subsection{The Guadalajara pilot}
+
+The next conceptual move was to treat AGEBs as ``cities inside the city'' and test whether the same logic survives. For Guadalajara we began with four \(Y\)'s:
+\begin{equation}
+Y_a \in \{\texttt{all},\texttt{micro},\texttt{scian2::46},\texttt{scian2::54}\},
+\end{equation}
+and fitted
+\begin{equation}
+\log Y_a = \alpha + \beta \log N_a + \varepsilon_a.
+\label{eq:ageb-pilot}
+\end{equation}
+
+Using \(442\) AGEB units in Guadalajara, the pilot produced:
+\begin{align}
+\texttt{all}: &\quad \beta \approx -0.038,\qquad R^2 \approx 0.002,\\
+\texttt{micro}: &\quad \beta \approx 0.111,\qquad R^2 \approx 0.013,\\
+\texttt{scian2::46}: &\quad \beta \approx 0.177,\qquad R^2 \approx 0.027,\\
+\texttt{scian2::54}: &\quad \beta \approx -0.542,\qquad R^2 \approx 0.130.
+\end{align}
+
+The collapse of the total law was immediate. The next question was whether this was an artifact of the estimator.
+
+\subsection{Robustness across model families}
+
+We therefore compared OLS, robust regression, Poisson, negative binomial, and an automatic selector. For the total AGEB law in Guadalajara:
+\begin{align}
+\text{OLS: } & \beta=-0.038,\; R^2\approx 0.0017,\\
+\text{Robust: } & \beta=-0.031,\; R^2\approx 0.0005,\\
+\text{NegBin: } & R^2\approx 0.0055.
+\end{align}
+
+The qualitative result did not change. This was important: the AGEB problem was not ``choose another regression family and the law comes back''. The support had exposed a structural failure of population-alone organization.
+
+\subsection{AGEB fitability audit}
+
+The pilot was then expanded to a city-native AGEB catalog for Guadalajara:
+\begin{itemize}
+\item total;
+\item SCIAN 2-digit;
+\item \texttt{per\_ocu};
+\item derived size class;
+\item SCIAN 2-digit crossed with derived size class.
+\end{itemize}
+
+That generated \(121\) candidate \(Y\)'s, \(120\) fitted. The AGEB fitability audit showed:
+\begin{itemize}
+\item \(0\) \(A\)-strong,
+\item \(15\) \(B\)-usable,
+\item \(13\) \(C\)-exploratory,
+\item \(92\) \(D\)-unfit.
+\end{itemize}
+
+At the family level:
+\begin{itemize}
+\item \texttt{total}: \(0/1\) usable;
+\item \texttt{per\_ocu}: \(3\) usable;
+\item \texttt{size\_class}: \(2\) usable;
+\item \texttt{scian2}: \(4\) usable;
+\item \texttt{scian2\_size\_class}: \(6\) usable.
+\end{itemize}
+
+This gave the first strong multiscale statement:
+\begin{equation}
+\text{The city law does not descend uniformly to AGEB support.}
+\end{equation}
+
+\paragraph{Reproducibility inside the phase.}
+The AGEB descent is reproduced with
+\texttt{scripts/run\_single\_city\_ageb\_experiment.py},
+\texttt{scripts/run\_ageb\_city\_native\_experiments.py},
+and
+\texttt{scripts/run\_ageb\_fitability\_audit.py}.
+The support objects are the persisted AGEB layers in
+\texttt{raw.population\_units},
+\texttt{raw.admin\_units},
+and
+\texttt{raw.denue\_establishments}.
+So when Eq.~\eqref{eq:ageb-pilot} fails, it is failing on a real mesoscopic support, not on a cached toy sample.
+
+\section{Phase IV: Why the AGEB law fails}
+
+\subsection{Between-stratum versus within-stratum decomposition}
+
+To understand the collapse, we compared the city system against AGEBs in Guadalajara using the same total establishments law.
+
+At city scale:
+\begin{equation}
+\beta_{\mathrm{city}} \approx 0.950,
+\qquad
+R^2_{\mathrm{city}} \approx 0.846,
+\qquad
+\text{between-share} \approx 0.826.
+\end{equation}
+
+At AGEB scale inside Guadalajara:
+\begin{equation}
+\beta_{\mathrm{ageb}} \approx -0.038,
+\qquad
+R^2_{\mathrm{ageb}} \approx 0.002,
+\qquad
+\text{between-share} \approx 0.044.
+\end{equation}
+
+The decomposition was essentially:
+\begin{equation}
+\Var(\log Y)
+=
+\Var\!\bigl(\E[\log Y \mid \text{population band}]\bigr)
++
+\E\!\bigl[\Var(\log Y \mid \text{population band})\bigr].
+\end{equation}
+
+At city scale the between-band component is large; at AGEB scale the within-band component dominates. AGEBs with similar \(N_a\) can have wildly different establishment counts. This is not a small-sample issue; it is a regime-mixing issue.
+
+\subsection{Centrality extension}
+
+The obvious next hypothesis was that intra-urban scaling fails because AGEB population is residential mass, while the local economy is also organized by centrality. For Guadalajara total establishments we tested:
+\begin{align}
+M_0 &: \log Y_a = \alpha + \beta \log N_a + \varepsilon_a,\\
+M_1 &: \log Y_a = \alpha + \beta \log N_a + \gamma \log d_a + \varepsilon_a,\\
+M_2 &: \log Y_a = \alpha + \beta \log N_a + \gamma d_a + \varepsilon_a,\\
+M_3 &: \log Y_a = \alpha + \beta \log N_a + \gamma_1 d_a + \gamma_2 d_a^2 + \varepsilon_a,
+\end{align}
+where \(d_a\) is a distance-to-center proxy.
+
+For total establishments:
+\begin{itemize}
+\item \(M_0\): \(\adjR \approx -0.001\),
+\item \(M_1\): \(\adjR \approx 0.118\),
+\item \(M_2\): \(\adjR \approx 0.110\),
+\item \(M_3\): \(\adjR \approx 0.110\).
+\end{itemize}
+
+Thus, centrality recovered genuine structure, but not enough to restore a city-like AGEB law.
+
+The same extension was then tested on the \(15\) usable AGEB \(Y\)'s. The gain from centrality was highly heterogeneous. Some \(Y\)'s were strongly centrality-sensitive; others almost did not change. This indicated:
+\begin{equation}
+\text{Intra-urban structure is not governed by one correction term but by a mixture of mechanisms.}
+\end{equation}
+
+\paragraph{Reproducibility inside the phase.}
+This branch is reproduced with
+\texttt{scripts/run\_independent\_ageb\_baseline.py},
+\texttt{scripts/run\_ageb\_centrality\_extension\_case.py},
+\texttt{scripts/run\_ageb\_centrality\_extensions\_usable.py},
+and
+\texttt{scripts/run\_ageb\_usable\_map\_pack.py}.
+The distance proxy \(d_a\) is derived from AGEB geometry, so the coefficient \(\gamma\) measures how local position within the city modifies the effect of local population.
+
+\section{Phase V: Artificial lawful subsets inside a city}
+
+\subsection{From failure to latent lawful subsets}
+
+At this point the question changed. Instead of asking whether all AGEBs in Guadalajara obey one law, we asked whether there exist \emph{subsets} of AGEBs that obey a clean law:
+\begin{equation}
+\mathcal{S}^\ast \subseteq \mathcal{A}_{\mathrm{GDL}}
+\quad\text{such that}\quad
+\log Y_a = \alpha_{\mathcal{S}} + \beta_{\mathcal{S}} \log N_a + \varepsilon_a,
+\quad
+a \in \mathcal{S}^\ast,
+\end{equation}
+with large \(R^2\).
+
+An initial constrained search using distance-based rules suggested that some peripheral subsets had much cleaner fit. But the user explicitly rejected imposing a rule at the selection stage. So we moved to unconstrained subset discovery.
+
+\subsection{Unconstrained subset search}
+
+The unconstrained search fixed only target subset size and let the algorithm choose AGEBs to maximize fit. For Guadalajara total establishments:
+\begin{align}
+|\mathcal{S}|=40 &: \quad \beta \approx 1.265,\quad R^2 \approx 0.973,\\
+|\mathcal{S}|=60 &: \quad \beta \approx 1.407,\quad R^2 \approx 0.923,\\
+|\mathcal{S}|=80 &: \quad \beta \approx 1.303,\quad R^2 \approx 0.893,\\
+|\mathcal{S}|=100 &: \quad \beta \approx 1.209,\quad R^2 \approx 0.770,\\
+|\mathcal{S}|=120 &: \quad \beta \approx 1.114,\quad R^2 \approx 0.653.
+\end{align}
+
+This was a major conceptual result. The AGEB law had not disappeared; it had been hidden by regime mixing. A lawful subset could be found \emph{without imposing a morphology rule ex ante}.
+
+\subsection{Consensus core}
+
+We then built a consensus core:
+\begin{equation}
+\mathcal{C}
+=
+\left\{
+a \in \mathcal{A}_{\mathrm{GDL}} :
+a \text{ appears in at least 3 of the top 12 unconstrained subsets}
+\right\}.
+\end{equation}
+
+The resulting consensus set contained \(126\) AGEBs and obeyed
+\begin{equation}
+\beta_{\mathcal{C}} \approx 1.159,
+\qquad
+R^2_{\mathcal{C}} \approx 0.789.
+\end{equation}
+
+That core is important because it is much larger than a cherry-picked set of \(40\), yet it preserves a strong law. It provides a mesoscopic object inside the city.
+
+\subsection{What the consensus core had in common}
+
+The next move was \emph{not} to declare victory and interpret the subset visually. Instead, we compared consensus-core AGEBs against the rest. The signal was surprisingly weak in naive geometry:
+\begin{itemize}
+\item more population (\(\Delta z \approx +0.49\)),
+\item slightly more density (\(\Delta z \approx +0.18\)),
+\item almost nothing decisive in area or distance alone.
+\end{itemize}
+
+This killed the easy explanation that the lawful core was just ``small AGEBs'', ``periphery'', or ``compact cells''. Its regularity was real but not reducible to a single obvious morphological rule.
+
+\subsection{Consensus explanatory models}
+
+We then treated consensus membership as a clue to latent regimes and fitted explanatory models. For all Guadalajara AGEBs:
+\begin{align}
+M_0 &: \log Y = \alpha + \beta \log N,\\
+M_1 &: \log Y = \alpha + \beta \log N + \delta \log \rho,\\
+M_2 &: \log Y = \alpha + \beta \log N + \bm{\theta}^\top \mathbf{c},\\
+M_3 &: \log Y = \alpha + \beta \log N + \delta \log \rho + \bm{\theta}^\top \mathbf{c},\\
+M_4 &: M_3 + \psi\, \mathbf{1}_{\mathcal{C}},\\
+M_5 &: M_4 + \omega\, \mathbf{1}_{\mathcal{C}}\log N.
+\end{align}
+
+The key result was not \(M_4\), but \(M_5\): allowing the core to have a different \emph{slope} mattered much more than simply giving it a different intercept. This motivated later class-dependent and state-dependent exponents at city scale.
+
+\paragraph{Reproducibility inside the phase.}
+The lawful-subset branch is reproduced with
+\texttt{scripts/run\_ageb\_subset\_search.py},
+\texttt{scripts/run\_ageb\_unconstrained\_subset\_search.py},
+\texttt{scripts/run\_ageb\_subset\_discovery.py},
+\texttt{scripts/run\_ageb\_consensus\_comparison.py},
+and
+\texttt{scripts/run\_ageb\_consensus\_explanatory\_models.py}.
+These scripts start from the persisted AGEB establishment-population tables and search directly over subsets \(\mathcal{S}\), so the ``lawful core'' is an estimated internal regime, not a hand-drawn zone.
+
+\section{Phase VI: Do cities with similar \(\SAMI\) have similar interiors?}
+
+\subsection{Internal signatures}
+
+The next conceptual leap was from one city to many. We defined an internal signature vector for each sampled city:
+\begin{equation}
+\mathbf{F}_i
+=
+\Bigl(
+\beta^{\mathrm{ageb}}_i,
+R^{2,\mathrm{ageb}}_i,
+\Delta R^2_{\mathrm{density},i},
+\Delta R^2_{\mathrm{distance},i},
+R^2_{\mathrm{subset},i},
+R^2_{\mathrm{consensus},i},
+\ldots
+\Bigr).
+\end{equation}
+
+Then we asked whether cities close in global city-level \(\SAMI\) are also close in internal-signature space.
+
+\subsection{Pairwise comparison}
+
+Across a \(20\)-city sample:
+\begin{equation}
+\mathrm{corr}\!\left(
+d_{\SAMI}(i,j), d_{\mathrm{internal}}(i,j)
+\right)
+\approx 0.267.
+\end{equation}
+
+But the nearest-neighbor identity rate was
+\begin{equation}
+\Pr\!\left[
+\operatorname{NN}_{\SAMI}(i)=\operatorname{NN}_{\mathrm{internal}}(i)
+\right]
+= 0.
+\end{equation}
+
+This was subtle but important. \(\SAMI\) was not independent of internal structure, but it was very far from being a sufficient internal-state descriptor.
+
+\subsection{Latent classes of internal structure}
+
+We then clustered cities by internal signature alone and compared the resulting clusters against \(\SAMI\). The internal clusters showed:
+\begin{itemize}
+\item mean internal distance within cluster \(\approx 4.708\),
+\item mean internal distance across clusters \(\approx 6.156\),
+\item but mean \(\SAMI\) distance within and across clusters was almost the same (\(\approx 0.262\) versus \(\approx 0.259\)).
+\end{itemize}
+
+So cities with almost identical \(\SAMI\) could be internally very different. In statistical-physics language, many different internal configurations could collapse into similar macroscopic residual positions.
+
+\paragraph{Reproducibility inside the phase.}
+This comparison is reproduced with
+\texttt{scripts/run\_city\_sami\_internal\_signature\_experiment.py},
+\texttt{scripts/run\_city\_sami\_latent\_classes.py},
+and
+\texttt{scripts/run\_city\_comparison\_dossier.py}.
+The signature vector \(\mathbf{F}_i\) is built from persisted outputs of the AGEB-law, subset, and centrality branches, so it is a derived state descriptor assembled from previous experiments rather than a primitive raw variable.
+
+\section{Phase VII: Best local subsets across many cities}
+
+Once lawful AGEB subsets were visible in Guadalajara, we repeated the local-subset search for \(20\) cities. For each city \(i\), we selected:
+\begin{equation}
+\mathcal{S}_i^\ast
+=
+\arg\max_{\mathcal{S}\subseteq \mathcal{A}_i,\ |\mathcal{S}|=m}
+R^2(\mathcal{S}),
+\end{equation}
+using the unconstrained search logic city by city.
+
+The striking empirical pattern was that the best subset size repeatedly landed at \(m=40\), and local fits were extremely strong:
+\begin{itemize}
+\item Aguascalientes: \(\beta \approx 1.056\), \(R^2 \approx 0.980\),
+\item Mexicali: \(\beta \approx 1.664\), \(R^2 \approx 0.988\),
+\item Tijuana: \(\beta \approx 1.118\), \(R^2 \approx 0.993\),
+\item Guadalajara: \(\beta \approx 1.339\), \(R^2 \approx 0.977\),
+\item Monterrey: \(\beta \approx 0.819\), \(R^2 \approx 0.984\).
+\end{itemize}
+
+These subsets were still fragmented spatially. So the latent lawful regime did not correspond to one contiguous ``good zone''.
+
+\paragraph{Reproducibility inside the phase.}
+The multi-city local-subset audit is reproduced with
+\texttt{scripts/run\_city\_best\_local\_ageb\_subsets.py}.
+The relevant object is again the optimized subset \(\mathcal{S}_i^\ast\), estimated independently for each city from its AGEB population-establishment cloud.
+
+\section{Phase VIII: Connectivity enters the problem}
+
+\subsection{Why connectivity became a candidate variable}
+
+The subset results suggested that support, density, and distance were not the whole story. The user hypothesized interconnectivity. This opened the OSM branch.
+
+At first OSM-derived metrics were only exploratory and cached through OSMnx. But because the experiments became central, we promoted them into the GIS database and later extracted the full national network layer for every city.
+
+\subsection{Subset-level connectivity in selected AGEB sets}
+
+For selected AGEB subsets we measured street-network quantities such as:
+\begin{align}
+\bar{k} &= \text{mean node degree},\\
+b &= \text{boundary-entry edges per km},\\
+s &= \text{street density},\\
+j &= \text{intersection density},\\
+c &= \text{circuity}.
+\end{align}
+
+For the selected subsets across cities, the strongest direct signal was mean degree:
+\begin{itemize}
+\item \(11/20\) selected subsets were above the \(95\)th percentile relative to random subsets of the same size in their own city,
+\item \(14/20\) were above the \(90\)th percentile,
+\item mean \(z\)-score against random \(\approx 1.436\).
+\end{itemize}
+
+Boundary-entry rate also showed a positive signal:
+\begin{equation}
+\overline{z}_{b} \approx 0.902.
+\end{equation}
+
+\subsection{Controls and partial explanation}
+
+We then tested whether connectivity still mattered after controlling for area, density, and composition. In pooled city-fixed-effects models for \(820\) subsets (\(20\) selected and \(800\) random):
+\begin{itemize}
+\item city fixed effects only: \(\adjR \approx -0.024\);
+\item + controls: \(\adjR \approx 0.069\);
+\item + connectivity only: \(\adjR \approx 0.029\);
+\item + controls + connectivity: \(\adjR \approx 0.085\).
+\end{itemize}
+
+So connectivity survived controls, but only partially. It was not the single hidden order parameter.
+
+\subsection{The subset extended law and why we later treated it cautiously}
+
+Using selected and random subsets together, we fitted:
+\begin{equation}
+\log Y
+=
+\alpha_c + \beta \log N + \delta \log \rho + \lambda \log B + \mu \log K + \bm{\theta}^\top \mathbf{q} + \varepsilon,
+\label{eq:subset-extended}
+\end{equation}
+with city fixed effects and composition block \(\mathbf{q}\).
+
+This produced strong gains:
+\begin{itemize}
+\item \(P_0\) city FE + \(\log N\): \(\adjR \approx 0.870\),
+\item \(P_3\) + density + connectivity: \(\adjR \approx 0.899\),
+\item \(P_4\) + density + connectivity + composition: \(\adjR \approx 0.934\).
+\end{itemize}
+
+However, this branch was later criticized for a real theoretical reason: the composition terms were partly shares derived from the same establishment field being explained. That makes them useful exploratory descriptors but weak primitive state variables for a clean first-principles equation. We therefore kept Eq.~\eqref{eq:subset-extended} as an exploratory branch, not as the final theory.
+
+\paragraph{Reproducibility inside the phase.}
+Connectivity and selected-subset OSM work is reproduced with
+\texttt{scripts/run\_city\_selected\_subset\_osm\_stats.py},
+\texttt{scripts/run\_city\_selected\_subset\_osm\_connectivity.py},
+\texttt{scripts/run\_city\_selected\_subset\_random\_connectivity\_baseline.py},
+\texttt{scripts/run\_city\_selected\_subset\_connectivity\_controls.py},
+and
+\texttt{scripts/run\_city\_subset\_extended\_power\_law.py}.
+The subset graph metrics are derived from the persisted city OSM layer intersected with selected AGEB sets.
+
+\section{Phase IX: Return to the first branch --- fix \(Y\), vary \(X\)}
+
+\subsection{The criticism that reset the branch}
+
+At this stage the user explicitly reset the logic: \emph{fix the response \(Y\), stay at city scale, and test one predictor at a time}. This was the correct methodological correction.
+
+We therefore fixed
+\begin{equation}
+Y_i = E_i = \text{total establishments},
+\end{equation}
+and tested:
+\begin{align}
+\log E_i &= \alpha_N + \beta_N \log N_i + \varepsilon_i,\\
+\log E_i &= \alpha_D + \beta_D \log D_i + \varepsilon_i,\\
+\log E_i &= \alpha_A + \beta_A \log A_i + \varepsilon_i,\\
+\log E_i &= \alpha_{\rho_N} + \beta_{\rho_N} \log \rho_i^{(N)} + \varepsilon_i,\\
+\log E_i &= \alpha_{\rho_D} + \beta_{\rho_D} \log \rho_i^{(D)} + \varepsilon_i.
+\end{align}
+
+\subsection{Results of the city-only predictor screen}
+
+For \(2469\) cities:
+\begin{itemize}
+\item occupied dwellings: \(\adjR \approx 0.854\), \(\beta \approx 0.969\);
+\item population: \(\adjR \approx 0.846\), \(\beta \approx 0.950\);
+\item dwelling density: \(\adjR \approx 0.348\), \(\beta \approx 0.577\);
+\item population density: \(\adjR \approx 0.344\), \(\beta \approx 0.560\);
+\item area: \(\adjR \approx 0.087\), \(\beta \approx 0.314\).
+\end{itemize}
+
+This branch established three things:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item size dominates density as a one-variable predictor;
+\item occupied dwellings are an even tighter empirical proxy than population;
+\item density alone does not replace city size.
+\end{enumerate}
+
+\subsection{Population versus occupied dwellings}
+
+We also fitted the benchmark demographic relation
+\begin{equation}
+\log D_i = \alpha_D + \beta_D \log N_i + \eta_i,
+\end{equation}
+which yielded
+\begin{equation}
+\beta_D \approx 0.981,
+\qquad
+\adjR \approx 0.994.
+\end{equation}
+
+This fit is intentionally not the main urban scaling object; it is a benchmark. It shows that population organizes occupied dwellings much more tightly than it organizes establishments. That led to the residual-gap diagnostic:
+\begin{equation}
+g_i = r_{E,i} - r_{D,i},
+\end{equation}
+where \(r_{E,i}\) and \(r_{D,i}\) are the log residuals of establishments and dwellings with respect to population. Positive \(g_i\) means ``economically high relative to its own demographic baseline''.
+
+\subsection{Why density required a dimensional critique}
+
+At this point a crucial theoretical objection was raised: writing
+\begin{equation}
+Y = Y_0 N^\beta \rho^\delta
+\end{equation}
+obscures the fact that
+\begin{equation}
+\rho = \frac{N}{A},
+\end{equation}
+so the same size variable enters twice. More rigorously,
+\begin{equation}
+N^\beta \rho^\delta = N^{\beta+\delta} A^{-\delta}.
+\end{equation}
+
+Thus a law written in terms of \(\rho\) may be better understood as a law over \(N\) and \(A\). This dimensional and interpretive criticism directly motivated the final state-equation branch.
+
+\paragraph{Reproducibility inside the phase.}
+The city-only reset is reproduced with
+\texttt{scripts/run\_city\_only\_single\_predictor\_power\_laws.py},
+\texttt{scripts/run\_city\_population\_vs\_dwellings\_pack.py},
+and
+\texttt{scripts/run\_city\_population\_dwellings\_establishments\_comparison.py}.
+These runs keep \(E_i\) fixed as the response and vary only one predictor at a time, which is why they are the clean dimensional checkpoint of the whole program.
+
+\section{Phase X: City-scale network metrics as continuous predictors}
+
+\subsection{First city-scale network tests}
+
+Before the full national network extraction was complete, we tested city-scale network metrics on a \(20\)-city sample. Univariately, the strongest predictor remained population, but several network intensities had real signal:
+\begin{itemize}
+\item \(N\): \(\adjR \approx 0.524\),
+\item intersection density: \(\adjR \approx 0.487\),
+\item street density: \(\adjR \approx 0.487\),
+\item boundary-entry rate: \(\adjR \approx 0.461\).
+\end{itemize}
+
+This was enough to justify building the national network layer.
+
+\subsection{National network persistence}
+
+The full OSM extraction and persistence phase created a new national structural layer:
+\begin{equation}
+\mathcal{G}
+=
+\{
+G_i : i=1,\dots,2478
+\},
+\end{equation}
+where each \(G_i\) is a drive-network graph for a city support. This made it possible to move from local graphical intuition to reproducible national modeling.
+
+\paragraph{Reproducibility inside the phase.}
+The city-scale connectivity screen is reproduced with
+\texttt{scripts/run\_city\_connectivity\_power\_laws.py}.
+It uses the national OSM persistence layer already loaded into the database, so the variables \(B_i\), \(S_i\), \(J_i\), \(K_i\), and \(C_i\) are computed from stored nodes, edges, and geometries rather than from transient cache files.
+
+\section{Phase XI: Topological classes at city scale}
+
+\subsection{Why classify cities by network topology?}
+
+Once the national network layer existed, the next hypothesis was naturally statistical-mechanical: perhaps the global law
+\begin{equation}
+\log E_i = \alpha + \beta \log N_i + \varepsilon_i
+\end{equation}
+is actually the coarse-grained projection of several topological regimes. To test that, we first built discrete classes from city-network metrics.
+
+\subsection{The topology features}
+
+Using all \(2478\) persisted city networks, we clustered cities using:
+\begin{equation}
+\mathbf{z}_i =
+\Bigl(
+\log n_i,
+\log A_i,
+\log s_i,
+\log b_i,
+K_i
+\Bigr),
+\end{equation}
+where \(n_i\) is number of network nodes, \(A_i\) support area, \(s_i\) street density, \(b_i\) boundary-entry rate, and \(K_i\) mean degree.
+
+This produced \(5\) heuristic classes:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item Intermediate mixed,
+\item Large dense metropolitan,
+\item Large expansive sparse,
+\item Small dense compact,
+\item Small sparse rural.
+\end{enumerate}
+
+These labels were interpretive; the clustering itself was purely feature-based.
+
+\subsection{Class-conditioned scaling laws}
+
+We then tested whether the city scaling law changes by topology class:
+\begin{equation}
+\log E_i = \alpha_c + \beta_c \log N_i + \varepsilon_i.
+\end{equation}
+
+Global city law:
+\begin{equation}
+\beta \approx 0.950,
+\qquad
+\adjR \approx 0.846.
+\end{equation}
+
+By class:
+\begin{align}
+\text{Large expansive sparse: } & \beta \approx 1.066,\quad \adjR \approx 0.867,\\
+\text{Intermediate mixed: } & \beta \approx 1.062,\quad \adjR \approx 0.779,\\
+\text{Large dense metropolitan: } & \beta \approx 0.956,\quad \adjR \approx 0.947,\\
+\text{Small sparse rural: } & \beta \approx 0.823,\quad \adjR \approx 0.724,\\
+\text{Small dense compact: } & \beta \approx 0.625,\quad \adjR \approx 0.515.
+\end{align}
+
+Nested-model tests showed that classes change not only intercepts but also slopes:
+\begin{itemize}
+\item \(M_0 \to M_1\) (intercepts only): \(p \approx 2.60\times 10^{-54}\),
+\item \(M_1 \to M_2\) (slopes also): \(p \approx 2.24\times 10^{-60}\).
+\end{itemize}
+
+This was the clearest statistical-physics style result up to that point: different topological classes behaved like different macroscopic scaling regimes.
+
+\paragraph{Reproducibility inside the phase.}
+The network-class branch is reproduced with
+\texttt{scripts/run\_city\_network\_typology.py}
+and
+\texttt{scripts/run\_city\_class\_scaling\_laws.py}.
+The first script estimates the topology classes from persisted network features, and the second tests whether the city law changes by class.
+
+\section{Phase XII: \(\SAMI\) by topology class}
+
+\subsection{Do topology classes explain residual position?}
+
+The next experiment treated \(\SAMI\) itself as the response and asked whether topology class shifts its mean:
+\begin{align}
+M_0 &: \SAMI_i = \mu + \eta_i,\\
+M_1 &: \SAMI_i = \mu + \gamma_c + \eta_i.
+\end{align}
+
+The class effect was highly significant:
+\begin{equation}
+p \approx 8.64\times 10^{-53},
+\end{equation}
+but the explanatory power was modest:
+\begin{equation}
+R^2(M_1) \approx 0.096.
+\end{equation}
+
+Class means:
+\begin{itemize}
+\item Large dense metropolitan: mean \(\SAMI \approx +0.355\),
+\item Small sparse rural: mean \(\SAMI \approx +0.240\),
+\item Intermediate mixed: mean \(\SAMI \approx +0.002\),
+\item Large expansive sparse: mean \(\SAMI \approx -0.097\),
+\item Small dense compact: mean \(\SAMI \approx -0.262\).
+\end{itemize}
+
+But the overlap remained large:
+\begin{equation}
+\text{Cram\'er's } V(\text{class},\text{SAMI decile}) \approx 0.191.
+\end{equation}
+
+So \(\SAMI\) carries some topological signal, but is not a sufficient topology state variable. This motivated the shift from discrete classes to continuous state variables.
+
+\paragraph{Reproducibility inside the phase.}
+The class-conditioned residual branch is reproduced with
+\texttt{scripts/run\_city\_class\_sami\_distributions.py}.
+It uses the same class assignments as Phase XI and evaluates whether those classes shift the distribution of \(\SAMI_i\).
+
+\section{Phase XIII: Toward a continuous equation of state}
+
+\subsection{The target idea}
+
+The discrete-class result suggested a continuous analogue:
+\begin{equation}
+\log E_i = \alpha(\mathbf{z}_i) + \beta(\mathbf{z}_i)\log N_i + \varepsilon_i,
+\label{eq:state-eq-idea}
+\end{equation}
+where \(\mathbf{z}_i\) is a continuous network/support state vector.
+
+To make the model dimensionally cleaner, we expressed variables as centered logarithmic ratios around geometric-mean reference values:
+\begin{align}
+n_i &= \log(N_i/N_0),\\
+a_i &= \log(A_i/A_0),\\
+s_i &= \log(S_i/S_0),\\
+k_i &= \log(K_i/K_0),\\
+c_i &= \log(C_i/C_0).
+\end{align}
+
+\subsection{Model family}
+
+The continuous state equation was built in three stages:
+\begin{align}
+M_0 &: \log E_i = \alpha + \beta n_i + \varepsilon_i,\\
+M_1 &: \log E_i = \alpha + \beta n_i + \sum_m \gamma_m z_{m,i} + \varepsilon_i,\\
+M_2 &: \log E_i = \alpha + \beta n_i + \sum_m \gamma_m z_{m,i}
++ n_i \sum_m \delta_m z_{m,i} + \varepsilon_i.
+\label{eq:state-eq}
+\end{align}
+
+The \(M_2\) form implies a city-specific effective exponent:
+\begin{equation}
+\beta_{\mathrm{eff},i}
+=
+\beta + \sum_m \delta_m z_{m,i}.
+\label{eq:beta-eff}
+\end{equation}
+
+\subsection{Candidate state blocks}
+
+Several continuous blocks were tested. The best unrestricted block used:
+\begin{equation}
+\{A_i,\; b_i,\; j_i,\; K_i,\; C_i\},
+\end{equation}
+while the best parsimonious block used:
+\begin{equation}
+\{A_i,\; S_i,\; K_i,\; C_i\}.
+\end{equation}
+
+For the selected parsimonious block:
+\begin{itemize}
+\item \(M_0\): \(\adjR \approx 0.846\),
+\item \(M_1\): \(\adjR \approx 0.871\),
+\item \(M_2\): \(\adjR \approx 0.885\).
+\end{itemize}
+
+For the unrestricted all-five block:
+\begin{equation}
+\adjR(M_2) \approx 0.8852,
+\end{equation}
+only \(0.0003\) above the parsimonious version. So the parsimonious block was selected.
+
+\subsection{The selected continuous state equation}
+
+With
+\begin{equation}
+(z_{m,i}) = (a_i,s_i,k_i,c_i),
+\end{equation}
+the selected equation was:
+\begin{align}
+\log E_i
+=\;&
+6.082
+ + 0.942\,n_i
+ - 0.126\,a_i
+ - 0.075\,s_i
+ + 1.321\,k_i
+ - 1.925\,c_i
+\nonumber\\
+&+ n_i\left(
+0.046\,a_i
+ + 0.042\,s_i
+ - 0.211\,k_i
+ - 0.676\,c_i
+\right)
+ + \varepsilon_i.
+\label{eq:selected-state}
+\end{align}
+
+Thus,
+\begin{equation}
+\beta_{\mathrm{eff},i}
+=
+0.942
+ + 0.046\,a_i
+ + 0.042\,s_i
+ - 0.211\,k_i
+ - 0.676\,c_i.
+\label{eq:selected-beta-eff}
+\end{equation}
+
+\subsection{What this equation does and does not do}
+
+The continuous state equation recovered more residual structure than the discrete classes:
+\begin{itemize}
+\item class labels explained \(\approx 9.6\%\) of \(\SAMI\) variance;
+\item the parsimonious continuous block explained \(\approx 16.5\%\);
+\item the unrestricted all-five block explained \(\approx 17.8\%\).
+\end{itemize}
+
+So the continuous state equation is better than the class labels as an explanatory object. However, it does not perfectly reproduce the class-conditioned exponents \(\beta_c\). For example:
+\begin{itemize}
+\item Small dense compact: discrete \(\beta_c \approx 0.625\), continuous class-mean \(\beta_{\mathrm{eff}} \approx 0.821\);
+\item Large dense metropolitan: discrete \(\beta_c \approx 0.956\), continuous class-mean \(\beta_{\mathrm{eff}} \approx 1.026\).
+\end{itemize}
+
+Hence the continuous state variables are moving in the right direction but do not yet collapse all macroscopic slope heterogeneity.
+
+\paragraph{Reproducibility inside the phase.}
+The first continuous state-equation branch is reproduced with
+\texttt{scripts/run\_city\_continuous\_state\_equation.py}.
+The state coordinates \(n_i,a_i,s_i,k_i,c_i\) are all derived from persisted city population and network metrics, so Eq.~\eqref{eq:selected-state} can be rerun directly from the database.
+
+\section{Statistical-physics interpretation}
+
+\subsection{What survived the experiments}
+
+The simplest interpretation of the whole program is this:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item At city scale, there is a strong macro-law \(E \sim N^\beta\).
+\item Descending to AGEB reveals that this macro-law does not trivially survive as a universal local law.
+\item Lawful subsets exist inside cities, so the failure is not pure noise.
+\item Cities with similar global residuals can still have very different interiors.
+\item Topology classes shift both the residual field and the scaling exponent.
+\item A continuous state equation based on support and network variables explains more than the classes, but still not everything.
+\end{enumerate}
+
+\subsection{Microstates, mesostates, and coarse-graining}
+
+This suggests a statistical-physics style decomposition. Let \(\omega_i\) denote the full micro/mesoscopic state of city \(i\): internal functional mix, local centralities, street network, support artifacts, and other hidden organization. The observed macro variables are then projections:
+\begin{equation}
+\omega_i \mapsto \bigl(N_i,E_i,\SAMI_i,\mathbf{z}_i\bigr).
+\end{equation}
+
+The city law says that after massive coarse-graining,
+\begin{equation}
+\E[\log E_i \mid \log N_i] \approx \alpha + \beta \log N_i.
+\end{equation}
+
+But the later branches show that the residual and even the exponent are modulated by mesoscopic state:
+\begin{equation}
+\E[\log E_i \mid \log N_i,\mathbf{z}_i]
+\approx
+\alpha(\mathbf{z}_i) + \beta(\mathbf{z}_i)\log N_i.
+\end{equation}
+
+This is not equilibrium thermodynamics in any naive sense. It is closer to a nonequilibrium, coarse-grained empirical renormalization picture \citep{wilson1971renormalization,sethna2006statistical}. The city law is robust as a first-order macro regularity, but its residual and exponent structure encode incomplete coarse-graining of topology and internal organization.
+
+\subsection{What the newer Bettencourt course already contains, and what remains open}
+
+The first generation of scaling papers established the average city law and the importance of residual deviations, but the newer course materials make it clear that Bettencourt's own framework has moved beyond a purely aggregate reading \citep{bettencourtcourse2024}. Several course modules are directly relevant to the problem pursued in this monograph.
+
+First, the course now treats the \emph{distribution} of city deviations from scaling as a theoretical object in its own right. Lecture 10.1 asks why ``deviations from scaling for each city have the observed distribution'' and explicitly connects this question to the use of resources and information at individual and firm levels \citep{bettencourtlecture10_2024}. In our notation, this is no longer only the problem of fitting
+\begin{equation}
+\log E_i = \alpha + \beta \log N_i + \varepsilon_i,
+\end{equation}
+but also the problem of understanding the empirical law of the residual field
+\begin{equation}
+\varepsilon_i = \SAMI_i.
+\end{equation}
+This is a substantive step beyond the earliest scaling papers because the residual is being treated as an object with its own statistics rather than as generic unexplained noise.
+
+Second, the course now goes explicitly \emph{inside cities}. Lecture 11.1 develops a neighborhood-level information and selection framework \citep{bettencourtlecture11_2024}. There the fundamental objects are conditional probabilities such as
+\begin{equation}
+p(y_i \mid n_j),
+\end{equation}
+interpreted as the probability of an income group \(y_i\) given a neighborhood \(n_j\), and a corresponding ``strength of neighborhood selection''
+\begin{equation}
+w_{ij}
+=
+\frac{p(n_j,y_i)}{p(y_i)p(n_j)}.
+\end{equation}
+The lecture then introduces mutual information between neighborhoods and income,
+\begin{equation}
+I(n;y)
+=
+\sum_{i,j} p(y_i,n_j)\log_2 \frac{p(y_i,n_j)}{p(y_i)p(n_j)},
+\end{equation}
+and neighborhood-specific information via KL divergence,
+\begin{equation}
+D(n_j)
+=
+\sum_i p(y_i\mid n_j)\log_2\frac{p(y_i\mid n_j)}{p(y_i)}.
+\end{equation}
+This is very close in spirit to the present monograph's insistence that the city interior cannot be reduced to a single sufficient scalar residual. The course is effectively saying that within-city structure may have to be described through information, sorting, and neighborhood differentiation.
+
+Third, the course preserves and updates the network-theoretic core of the scaling framework. Lecture 7.1 still presents the city as a system that mixes populations over built space and time, with decentralized but hierarchical infrastructure networks and interaction-generated socioeconomic outputs under spatial costs \citep{bettencourtlecture7_2024}. In our language, this is consistent with the move from
+\begin{equation}
+E \sim N^\beta
+\end{equation}
+to
+\begin{equation}
+\E[\log E_i\mid \log N_i,\mathbf{z}_i]
+\approx
+\alpha(\mathbf{z}_i)+\beta(\mathbf{z}_i)\log N_i,
+\end{equation}
+where \(\mathbf{z}_i\) encodes built-space and network state.
+
+Fourth, the course now uses an explicitly state-like language for large cities. Lecture 18.1 describes larger cities as exhibiting a state of ``interaction density, diversity, heterogeneity, interdependence and complementarity'' \citep{bettencourtlecture18_2024}. That language is conceptually close to a city equation of state, even if the course does not write such an equation in fitted empirical form.
+
+Finally, Lecture 12.1 on neighborhoods and local sustainable development introduces a place-based language of community organization, information, and local agency \citep{bettencourtlecture12_2024}. This does not solve the scaling problem mathematically, but it broadens the framework in a direction that is compatible with our lawful-subset and internal-regime results: place-based organization and information become candidate mesoscopic carriers of urban heterogeneity.
+
+So the answer is nuanced. The newer course materials \emph{do} address much more of the present problem than the first papers did. They explicitly introduce: (i) the statistics of deviations, (ii) neighborhood-level information and spatial selection, (iii) network topology and hierarchical infrastructure, and (iv) a state-like language of density, diversity, and interdependence. However, they still stop short of the exact closure sought here. In particular, the course does not yet provide an empirical multiscale law of the form
+\begin{equation}
+\log E_i
+=
+\alpha(\mathbf{z}_i)+\beta(\mathbf{z}_i)\log N_i+\varepsilon_i,
+\end{equation}
+nor does it test whether cities with similar \(\SAMI\) must have similar internal structure, nor whether lawful intra-urban subsets can be systematically discovered and compared across cities. In that sense, the course opens the door to the present monograph's program but does not complete it.
+
+\subsection{What is still unresolved}
+
+The experiments do \emph{not} yet establish a final urban equation of state. At least four open issues remain:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item municipal support is still an imperfect proxy for built city;
+\item the continuous state variables explain only part of \(\SAMI\) and \(\beta_c\) heterogeneity;
+\item the AGEB lawful subsets are real but their generative mechanism is not yet uniquely identified;
+\item composition remains useful descriptively, but a clean theoretical status for composition terms is still unresolved because of partial endogeneity to the response.
+\end{enumerate}
+
+\section{Phase XIV: Neighborhood information and spatial selection}
+
+\subsection{Why the Bettencourt-new branch required a new object}
+
+The continuous state equation based on city network variables improved the city law, but it still treated the city interior too indirectly. The newer Bettencourt course suggested a different object: the joint distribution of neighborhoods and internal categories. In our case, income classes were not the natural variable. The natural analogue was the internal economic field itself.
+
+For each city \(i\), support scale \(r\in\{\text{AGEB},\text{manzana}\}\), spatial unit \(j\), and category \(\ell\), define
+\begin{equation}
+y_{ij\ell}^{(r)}
+
+=
+\text{number of establishments of category } \ell \text{ in unit } j.
+\end{equation}
+From this we form
+\begin{equation}
+p_i^{(r)}(j,\ell)
+=
+\frac{y_{ij\ell}^{(r)}}{\sum_{j,\ell} y_{ij\ell}^{(r)}},
+\qquad
+p_i^{(r)}(j)=\sum_\ell p_i^{(r)}(j,\ell),
+\qquad
+p_i^{(r)}(\ell)=\sum_j p_i^{(r)}(j,\ell).
+\end{equation}
+
+The main information-theoretic object is then
+\begin{equation}
+I_i^{(r)}(J;\Lambda)
+=
+\sum_{j,\ell}
+p_i^{(r)}(j,\ell)
+\log\frac{p_i^{(r)}(j,\ell)}{p_i^{(r)}(j)\,p_i^{(r)}(\ell)}.
+\label{eq:mi-main}
+\end{equation}
+
+This is the mutual information between spatial unit and economic category. It measures how much knowing location tells us about local economic type.
+
+\subsection{The support had to be national and persistent}
+
+This branch could not be run on partial AGEB coverage. The support system was therefore promoted to a fully persistent national workflow:
+\begin{itemize}
+\item national \texttt{manzana} population and geometry layers in \texttt{raw.population\_units} and \texttt{raw.admin\_units};
+\item national \texttt{ageb\_u} population and geometry layers in the same schemas;
+\item national derived economic and network tables for AGEB support.
+\end{itemize}
+
+At this stage the database contained:
+\begin{itemize}
+\item \(2{,}539{,}214\) manzana rows across \(2478\) cities;
+\item \(64{,}808\) AGEB rows across \(2478\) cities;
+\item national \texttt{derived.ageb\_economic\_mix} and \texttt{derived.ageb\_network\_metrics};
+\item full city OSM network persistence already described earlier.
+\end{itemize}
+
+This matters conceptually. It means the information branch was no longer a cached exploratory calculation. It became part of the independent database program.
+
+\subsection{Selection detail metrics}
+
+Beyond Eq.~\eqref{eq:mi-main}, we persisted three more objects:
+\begin{equation}
+w_{j\ell}
+=
+\frac{p(j,\ell)}{p(j)p(\ell)},
+\label{eq:lift-def}
+\end{equation}
+which is a pairwise lift or neighborhood-selection strength;
+\begin{equation}
+D_i^{(r)}(j)
+=
+\sum_\ell p_i^{(r)}(\ell\mid j)\log\frac{p_i^{(r)}(\ell\mid j)}{p_i^{(r)}(\ell)},
+\label{eq:unit-kl}
+\end{equation}
+which measures how informative a spatial unit is relative to the city baseline; and
+\begin{equation}
+D_i^{(r)}(\ell)
+=
+\sum_j p_i^{(r)}(j\mid \ell)\log\frac{p_i^{(r)}(j\mid \ell)}{p_i^{(r)}(j)},
+\label{eq:cat-kl}
+\end{equation}
+which measures how spatially localized a category is.
+
+We also kept local entropy,
+\begin{equation}
+H_i^{(r)}(j)
+=
+-\sum_\ell p_i^{(r)}(\ell\mid j)\log p_i^{(r)}(\ell\mid j),
+\end{equation}
+as a local diversity descriptor.
+
+\subsection{National results of the first information pass}
+
+The first full pass was run for two category families:
+\begin{itemize}
+\item SCIAN 2-digit sectors (\texttt{scian2});
+\item derived size classes (\texttt{size\_class}).
+\end{itemize}
+
+For \(2473\) cities with usable economic counts, the mean mutual-information results were:
+\begin{align}
+\text{AGEB} \times \texttt{scian2}: &\qquad \overline{I} \approx 0.2244,\\
+\text{AGEB} \times \texttt{size\_class}: &\qquad \overline{I} \approx 0.0406,\\
+\text{manzana} \times \texttt{scian2}: &\qquad \overline{I} \approx 0.9361,\\
+\text{manzana} \times \texttt{size\_class}: &\qquad \overline{I} \approx 0.1012.
+\end{align}
+
+The key inequality was:
+\begin{equation}
+I_i^{(\text{manzana})}(J;\Lambda)
+>
+I_i^{(\text{AGEB})}(J;\Lambda)
+\qquad\text{for the overwhelming majority of cities.}
+\end{equation}
+
+This matters because it says the internal economy becomes more informative, not less, as we descend below AGEB. The `neighborhood' in the Bettencourt-new sense is therefore not exhausted by AGEB support. In Mexican data, much of the internal economic information becomes visible only at manzana scale.
+
+\paragraph{Reproducibility inside the phase.}
+The first information branch is reproduced with
+\texttt{scripts/run\_spatial\_information\_phase1.py}
+and
+\texttt{scripts/run\_spatial\_information\_selection\_details.py}.
+These scripts aggregate persisted DENUE counts by
+\((j,\ell)\)
+on national AGEB and manzana supports and then compute the probabilities \(p(j,\ell)\), the mutual information, the local KL scores, and the pairwise lifts.
+
+\section{Phase XV: Multiscale decomposition of internal information}
+
+\subsection{The decomposition identity}
+
+Once both supports existed nationally, we could ask not only whether `manzana' is more informative than `AGEB', but \emph{how} the information is split across levels.
+
+Let \(M\) denote manzana, \(A\) denote AGEB, and \(\Lambda\) the economic category family. Then the key decomposition is
+\begin{equation}
+I(M;\Lambda)
+=
+I(A;\Lambda)+I(M;\Lambda\mid A).
+\label{eq:mi-decomp}
+\end{equation}
+
+The first term captures information \emph{between} AGEBs:
+\begin{equation}
+I(A;\Lambda).
+\end{equation}
+The second captures information \emph{within} AGEBs, once the AGEB is already known:
+\begin{equation}
+I(M;\Lambda\mid A).
+\end{equation}
+
+For each city we therefore stored:
+\begin{align}
+I_i^{(M)} &= I_i(M;\Lambda),\\
+I_i^{(A)} &= I_i(A;\Lambda),\\
+I_i^{(\mathrm{within})} &= I_i(M;\Lambda\mid A),
+\end{align}
+and their shares relative to the total:
+\begin{equation}
+\text{share}_{between,i}
+=
+\frac{I_i^{(A)}}{I_i^{(M)}},
+\qquad
+\text{share}_{within,i}
+=
+\frac{I_i^{(\mathrm{within})}}{I_i^{(M)}}.
+\end{equation}
+
+Because the decomposition is numerical rather than symbolic, we also kept an empirical gap:
+\begin{equation}
+\Delta_i^{(\mathrm{id})}
+=
+I_i^{(M)} - I_i^{(A)} - I_i^{(\mathrm{within})}.
+\end{equation}
+
+\subsection{National decomposition results}
+
+For \texttt{scian2}, the national means were:
+\begin{equation}
+\overline{\text{share}_{between}}
+\approx 0.1302,
+\qquad
+\overline{\text{share}_{within}}
+\approx 0.8225.
+\end{equation}
+
+For \texttt{size\_class}:
+\begin{equation}
+\overline{\text{share}_{between}}
+\approx 0.1314,
+\qquad
+\overline{\text{share}_{within}}
+\approx 0.7956.
+\end{equation}
+
+Thus the central empirical statement is:
+\begin{equation}
+I(M;\Lambda\mid A) \gg I(A;\Lambda)
+\end{equation}
+for most cities and for both category families.
+
+With a simple regime rule based on a \(0.67\) threshold, \texttt{scian2} produced:
+\begin{itemize}
+\item \(2265\) `within-dominant' cities,
+\item \(208\) mixed cities,
+\item \(0\) `between-dominant' cities.
+\end{itemize}
+
+For \texttt{size\_class}:
+\begin{itemize}
+\item \(1986\) `within-dominant',
+\item \(471\) mixed,
+\item \(4\) `between-dominant',
+\item \(12\) `gap-dominant'.
+\end{itemize}
+
+\subsection{Interpretation}
+
+This result is stronger than saying that manzana is ``more detailed''. Of course it is more detailed. The decomposition says something more substantive:
+\begin{equation}
+\text{AGEB is a useful mesoscopic support, but not the support where most economic organization lives.}
+\end{equation}
+
+In other words, AGEB is already a partial coarse-graining. It carries some between-neighborhood differentiation, but it leaves the majority of internal economic selection below itself.
+
+This is one of the clearest places where the project moved into Bettencourt-new territory. The city interior is not well described by one local residual or one support. It has an information hierarchy.
+
+\paragraph{Reproducibility inside the phase.}
+The multiscale information split is reproduced with
+\texttt{scripts/run\_spatial\_information\_multiscale\_decomposition.py}
+and
+\texttt{scripts/analyze\_spatial\_information\_regimes.py}.
+The first script computes \(I(M;\Lambda)\), \(I(A;\Lambda)\), and \(I(M;\Lambda\mid A)\) city by city; the second classifies the resulting regimes and writes them back to persistent derived tables.
+
+\section{Phase XVI: A city equation of state with internal information}
+
+\subsection{Why the network-only state equation was not enough}
+
+The earlier continuous state equation had shown that city network/support variables could modulate both the level and the effective slope of the city law. But after Phases XIV and XV, that equation was incomplete, because it did not know anything about the internal information hierarchy.
+
+We therefore extended the state coordinates. Using the city population reference \(N_0\) and geometric means \(A_0,S_0,K_0,C_0,I_0\), define
+\begin{align}
+n_i &= \log(N_i/N_0),\\
+a_i &= \log(A_i/A_0),\\
+s_i &= \log(S_i/S_0),\\
+k_i &= \log(K_i/K_0),\\
+c_i &= \log(C_i/C_0),\\
+m_i &= \log(I_i(M;\Lambda)/I_0),\\
+q_i &= \text{share}_{within,i}-\overline{\text{share}_{within}}.
+\end{align}
+
+Here \(m_i\) is the total manzana-scale economic information coordinate and \(q_i\) says whether a city stores more or less of its information below the AGEB than the family mean.
+
+\subsection{Model family}
+
+For total establishments \(E_i\), the extended model sequence was:
+\begin{align}
+M_0: \quad
+\log E_i &= \alpha + \beta n_i + \varepsilon_i,\\
+M_1: \quad
+\log E_i &= \alpha + \beta n_i + \gamma_a a_i + \gamma_s s_i + \gamma_k k_i + \gamma_c c_i + \varepsilon_i,\\
+M_2: \quad
+\log E_i &= M_1 + n_i(\delta_a a_i + \delta_s s_i + \delta_k k_i + \delta_c c_i),\\
+M_3: \quad
+\log E_i &= M_2 + \eta_m m_i + \eta_q q_i,\\
+M_4: \quad
+\log E_i &= M_3 + n_i(\psi_m m_i + \psi_q q_i).
+\end{align}
+
+This permits both level and slope modulation by internal information:
+\begin{equation}
+\beta_{\mathrm{eff},i}
+=
+\beta+\delta_a a_i+\delta_s s_i+\delta_k k_i+\delta_c c_i+\psi_m m_i+\psi_q q_i.
+\end{equation}
+
+\subsection{Results}
+
+For \texttt{scian2}, after excluding cities with \(|\text{share}_{gap}|>0.10\), the sample contained \(1699\) cities. The sequence of fit improvements was:
+\begin{align}
+M_0 &: \adjR \approx 0.8823,\\
+M_1 &: \adjR \approx 0.8992,\\
+M_2 &: \adjR \approx 0.9047,\\
+M_3 &: \adjR \approx 0.9279,\\
+M_4 &: \adjR \approx 0.9305.
+\end{align}
+The information block gave a very strong gain:
+\begin{equation}
+M_2 \rightarrow M_3:
+\qquad
+p \approx 4.06\times 10^{-103}.
+\end{equation}
+And information-dependent slope modulation also mattered:
+\begin{equation}
+M_3 \rightarrow M_4:
+\qquad
+p \approx 7.44\times 10^{-15}.
+\end{equation}
+
+For \texttt{size\_class}, the sample contained \(1552\) cities. There the sequence was:
+\begin{align}
+M_0 &: \adjR \approx 0.8656,\\
+M_1 &: \adjR \approx 0.8863,\\
+M_2 &: \adjR \approx 0.8939,\\
+M_3 &: \adjR \approx 0.9021,\\
+M_4 &: \adjR \approx 0.9021,
+\end{align}
+with
+\begin{equation}
+M_2 \rightarrow M_3:
+\qquad
+p \approx 4.78\times 10^{-28},
+\end{equation}
+but
+\begin{equation}
+M_3 \rightarrow M_4:
+\qquad
+p \approx 0.377.
+\end{equation}
+
+\subsection{Interpretation}
+
+The information variables therefore behave differently by family:
+\begin{itemize}
+\item for \texttt{scian2}, internal information shifts both the level and the effective slope of the city law;
+\item for \texttt{size\_class}, it clearly shifts the level, but the evidence for slope modulation is weak.
+\end{itemize}
+
+This is important theoretically. It means the internal information hierarchy is not just a residual descriptor. For sectoral structure, it is part of the city state that shapes the scaling law itself.
+
+\paragraph{Reproducibility inside the phase.}
+The information-augmented state equation is reproduced with
+\texttt{scripts/run\_spatial\_information\_state\_equation.py}.
+It joins the continuous network coordinates from Phase XIII with the information-regime coordinates from Phases XIV and XV, and persists both the fitted models and the city-level state parameters.
+
+\section{Phase XVII: Coarse-graining of the population-establishment law}
+
+\subsection{The direct support audit}
+
+The information branch showed where internal structure lives. But we still had to ask the most direct statistical-physics question: what happens to the law itself when the support changes?
+
+At each support scale \(r\in\{\text{manzana},\text{AGEB},\text{city}\}\), we fit
+\begin{equation}
+\log Y_q^{(r)} = \alpha(r) + \beta(r)\log N_q^{(r)} + \varepsilon_q^{(r)},
+\label{eq:support-law}
+\end{equation}
+with \(Y=\) total establishments and \(N=\) population.
+
+We examined this in two complementary ways.
+
+\paragraph{National support laws.}
+Here all units of the same support are pooled nationally.
+
+\paragraph{Within-city pooled laws.}
+For \texttt{manzana} and \texttt{AGEB}, we remove city intercepts and fit the support-scale slope on demeaned logs:
+\begin{equation}
+(\log Y_{iq}^{(r)}-\overline{\log Y}_{i}^{(r)})
+=
+\beta_{within}(r)\,(\log N_{iq}^{(r)}-\overline{\log N}_{i}^{(r)}) + u_{iq}^{(r)}.
+\end{equation}
+
+\subsection{National support results}
+
+The national raw laws were:
+\begin{align}
+\text{manzana}: \qquad
+\beta &\approx 0.2593,
+&
+\adjR &\approx 0.0707,
+\\
+\text{AGEB}: \qquad
+\beta &\approx 0.8298,
+&
+\adjR &\approx 0.5644,
+\\
+\text{city}: \qquad
+\beta &\approx 0.9496,
+&
+\adjR &\approx 0.8460.
+\end{align}
+
+So the national macro law does not descend. It \emph{emerges}.
+
+\subsection{Within-city pooled results}
+
+Inside cities, the same scale flow appeared:
+\begin{align}
+\text{manzana FE}: \qquad
+\beta_{within} &\approx 0.2139,
+&
+\adjR &\approx 0.0439,
+\\
+\text{AGEB FE}: \qquad
+\beta_{within} &\approx 0.8403,
+&
+\adjR &\approx 0.5282.
+\end{align}
+
+Thus coarse-graining from manzana to AGEB does not merely smooth noise. It produces a much steeper and much more regular intra-urban support law.
+
+\subsection{City paths}
+
+For each city with enough support on both scales, we defined:
+\begin{align}
+\Delta \beta_i &= \beta_{i,\mathrm{AGEB}} - \beta_{i,\mathrm{manzana}},\\
+\Delta R_i^2 &= R^2_{i,\mathrm{AGEB}} - R^2_{i,\mathrm{manzana}},\\
+\Delta \sigma_i &= \sigma_{i,\mathrm{AGEB}} - \sigma_{i,\mathrm{manzana}}.
+\end{align}
+
+Using a threshold of at least \(10\) usable units at both scales, we retained \(933\) cities and found:
+\begin{align}
+\overline{\Delta \beta} &\approx 0.6902,\\
+\overline{\Delta R^2} &\approx 0.5508,\\
+\overline{\Delta \sigma} &\approx 0.0681.
+\end{align}
+
+So, on average, moving from manzana to AGEB sharply steepens the local law and dramatically increases fit.
+
+\subsection{Interpretation}
+
+This phase delivered the clearest direct coarse-graining result of the whole project:
+\begin{equation}
+\text{the establishment law is weak at micro support, stronger at meso support, and strongest at macro support.}
+\end{equation}
+
+That is exactly what one would expect if the city law is an emergent, coarse-grained regularity rather than a universal local relation already present at the smallest support.
+
+\paragraph{Reproducibility inside the phase.}
+The coarse-graining audit is reproduced with
+\texttt{scripts/run\_city\_coarse\_graining\_laws.py}.
+Its raw ingredients are the national manzana, AGEB, and city tables already persisted in the database. The script then fits the same law support by support and stores both national summaries and city-specific paths.
+
+\section{Phase XVIII: Final multiscale synthesis}
+
+\subsection{The missing bridge}
+
+Phases XV and XVII, taken separately, say:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item most internal economic information lives below the AGEB;
+\item the law becomes much stronger when support is coarse-grained from manzana to AGEB.
+\end{enumerate}
+
+The missing bridge was to test whether those are the same phenomenon.
+
+For each city \(i\), define:
+\begin{align}
+\Delta R_i^2 &= R^2_{i,\mathrm{AGEB}} - R^2_{i,\mathrm{manzana}},\\
+\Delta \beta_i &= \beta_{i,\mathrm{AGEB}} - \beta_{i,\mathrm{manzana}},\\
+\Delta \sigma_i^{+} &= -(\sigma_{i,\mathrm{AGEB}}-\sigma_{i,\mathrm{manzana}}),
+\end{align}
+so that positive \(\Delta \sigma_i^{+}\) means residual dispersion falls under aggregation.
+
+We then used:
+\begin{equation}
+m_i = \log(I_i(M;\Lambda)/I_0),
+\qquad
+q_i = \text{share}_{within,i}-\overline{\text{share}_{within}},
+\qquad
+n_i=\log(N_i/N_0),
+\end{equation}
+and fitted, for each outcome \(Y_i^\ast\in\{\Delta R_i^2,\Delta\beta_i,\Delta\sigma_i^+\}\),
+\begin{align}
+M_0 &: Y_i^\ast = \alpha + \varepsilon_i,\\
+M_1 &: Y_i^\ast = \alpha + \eta_m m_i + \eta_q q_i + \varepsilon_i,\\
+M_2 &: Y_i^\ast = \alpha + \eta_m m_i + \eta_q q_i + \eta_n n_i + \varepsilon_i,\\
+M_3 &: Y_i^\ast = \alpha + \eta_m m_i + \eta_q q_i + \eta_n n_i + \psi_m m_i n_i + \psi_q q_i n_i + \varepsilon_i.
+\end{align}
+
+\subsection{Main results}
+
+For \texttt{scian2}, using \(773\) cities:
+\begin{align}
+\overline{\Delta R^2} &\approx 0.5444,\\
+\overline{\Delta \beta} &\approx 0.6846,\\
+\overline{\text{share}_{within}} &\approx 0.8008.
+\end{align}
+
+For \texttt{size\_class}, using \(631\) cities:
+\begin{align}
+\overline{\Delta R^2} &\approx 0.5467,\\
+\overline{\Delta \beta} &\approx 0.6861,\\
+\overline{\text{share}_{within}} &\approx 0.7925.
+\end{align}
+
+The simplest signal is correlational:
+\begin{align}
+\mathrm{corr}(\Delta R^2,\text{share}_{within})
+&\approx 0.343
+\quad \text{for \texttt{scian2}},\\
+\mathrm{corr}(\Delta R^2,\text{share}_{within})
+&\approx 0.349
+\quad \text{for \texttt{size\_class}}.
+\end{align}
+
+So cities where more structure lives below the AGEB tend to gain more fit when coarse-grained from manzana to AGEB.
+
+At the same time, city size matters:
+\begin{align}
+\mathrm{corr}(\Delta R^2,n)
+&\approx -0.438
+\quad \text{for \texttt{scian2}},\\
+\mathrm{corr}(\Delta R^2,n)
+&\approx -0.461
+\quad \text{for \texttt{size\_class}}.
+\end{align}
+
+This means the coarse-graining gain is larger, on average, in smaller cities. In larger cities, some of the law's regularity is already visible at coarser mesoscopic supports.
+
+\subsection{Model results}
+
+For the \(\Delta R^2\) outcome, the explanatory power of information and size was not trivial.
+
+For \texttt{scian2}:
+\begin{align}
+M_1 &: \adjR \approx 0.1656,\\
+M_2 &: \adjR \approx 0.2655,\\
+M_3 &: \adjR \approx 0.2669,
+\end{align}
+with
+\begin{equation}
+M_0\rightarrow M_1:
+\quad
+p \approx 1.94\times 10^{-31}.
+\end{equation}
+
+For \texttt{size\_class}:
+\begin{align}
+M_1 &: \adjR \approx 0.1267,\\
+M_2 &: \adjR \approx 0.2537,\\
+M_3 &: \adjR \approx 0.2711,
+\end{align}
+with
+\begin{equation}
+M_0\rightarrow M_1:
+\quad
+p \approx 1.26\times 10^{-19}.
+\end{equation}
+
+So the gain in law strength under coarse-graining is not random. It is statistically related to how much internal information exists, where that information lives, and how large the city is.
+
+\subsection{Quadrants and interpretation}
+
+To make the synthesis readable, we centered both \(\Delta R^2\) and \(\text{share}_{within}\) and classified cities into four quadrants:
+\begin{itemize}
+\item \texttt{high\_within\_strong\_cg},
+\item \texttt{low\_within\_strong\_cg},
+\item \texttt{high\_within\_weak\_cg},
+\item \texttt{low\_within\_weak\_cg}.
+\end{itemize}
+
+For \texttt{scian2}, the counts were:
+\begin{itemize}
+\item \(279\) high-within strong coarse-graining,
+\item \(108\) low-within strong coarse-graining,
+\item \(155\) high-within weak coarse-graining,
+\item \(231\) low-within weak coarse-graining.
+\end{itemize}
+
+For \texttt{size\_class}:
+\begin{itemize}
+\item \(202\) high-within strong coarse-graining,
+\item \(114\) low-within strong coarse-graining,
+\item \(140\) high-within weak coarse-graining,
+\item \(175\) low-within weak coarse-graining.
+\end{itemize}
+
+The existence of all four quadrants is important. It means that sub-AGEB heterogeneity is not the only ingredient. But it is a real and statistically detectable ingredient in the emergence of the law.
+
+\subsection{What the final synthesis says}
+
+This phase gives the clearest final answer the project has produced:
+\begin{equation}
+\text{the urban macro-law does not merely survive heterogeneity; it emerges in part because support aggregation absorbs it.}
+\end{equation}
+
+\paragraph{Reproducibility inside the phase.}
+The final synthesis is reproduced with
+\texttt{scripts/run\_city\_multiscale\_synthesis.py}.
+It reads the persistent outputs of the information-regime branch and the coarse-graining branch, constructs the feature set
+\((m_i,q_i,n_i,\Delta R_i^2,\Delta\beta_i,\Delta\sigma_i^{+})\),
+and fits the final bridge models that connect absorbed internal information to the strengthening of the law under aggregation.
+
+More cautiously:
+\begin{equation}
+\text{the strengthening of } E\sim N^\beta \text{ under aggregation is positively associated with sub-AGEB economic information.}
+\end{equation}
+
+That is not yet a full renormalization theory, but it is already much more than a slogan. It is an empirical multiscale bridge between:
+\begin{enumerate}[label=\arabic*.,leftmargin=2.0em]
+\item the internal information hierarchy of the city;
+\item the emergence of a stronger establishment law under coarse-graining;
+\item the city equation of state with network and information variables.
+\end{enumerate}
+
+\section{Conclusions}
+
+The project began from a single equation, Eq.~\eqref{eq:canonical-power}, and ended with a much more cautious but much richer multiscale statement.
+
+First, the national city law for total establishments is real and strong. Second, residuals around that law are structured and recurrent, not negligible. Third, descending in support to AGEB reveals that population alone ceases to organize the local economy in a universal way. Fourth, lawful subsets inside cities can be discovered algorithmically, implying latent regime structure. Fifth, network topology matters enough to produce class-conditioned exponents and residual distributions. Sixth, a continuous state equation using support and network variables explains more than topology classes alone, but still leaves substantial unresolved heterogeneity.
+
+The final phases sharpened this picture in three decisive ways. Seventh, the newer Bettencourt language of neighborhood information can be reproduced with economic categories rather than income classes, and it shows that much of the internal economic organization of Mexican cities lives below the AGEB, at manzana scale. Eighth, the establishment law itself becomes dramatically stronger under support aggregation from manzana to AGEB and from AGEB to city. Ninth, these two facts are not independent: the gain in fit under aggregation is positively associated with the amount of sub-AGEB economic information that is being absorbed by the coarse-graining step.
+
+So the final program does not merely say that the city law survives despite heterogeneity. It says that the law emerges through aggregation over a highly structured internal economy. In that sense, the project moved from a scaling law to an empirical coarse-graining theory of that law.
+
+In short, the research program moved from
+\begin{equation}
+E \sim N^\beta
+\end{equation}
+to
+\begin{equation}
+E \sim \exp\!\bigl(\alpha(\mathbf{z},\mathbf{i})\bigr)\,N^{\beta(\mathbf{z},\mathbf{i})},
+\end{equation}
+while learning that the relevant state is multiscale: it contains city network/support variables \(\mathbf{z}\), internal information variables \(\mathbf{i}\), and a hierarchy of supports in which the law changes under aggregation.
+
+This is not a final thermodynamic closure. But it is already a meaningful statistical-physics statement: the macro urban law is a coarse-grained regularity, and the amount of fine-grained information that must be absorbed to reveal it is itself measurable.
+
+\appendix
+
+\section{Experiment ledger}
+
+\begin{landscape}
+\small
+\begin{longtable}{p{0.14\textwidth}p{0.24\textwidth}p{0.27\textwidth}p{0.27\textwidth}}
+\toprule
+\textbf{Phase} & \textbf{Primary artifact} & \textbf{Main script} & \textbf{Purpose} \\
+\midrule
+\endhead
+City baseline & \texttt{dist/independent\_city\_baseline} & \texttt{scripts/run\_independent\_city\_baseline.py} & Canonical city law and \(\SAMI\) residuals \\
+City \(Y\) expansion & \texttt{reports/denue-y-native-experiments-2026-04-21} & \texttt{scripts/run\_denue\_y\_city\_native\_experiments.py} & Large catalog of candidate \(Y\)'s \\
+City curation & \texttt{reports/city-y-curated-results-pack-2026-04-22} & \texttt{scripts/run\_city\_y\_fitability\_audit.py}, \texttt{scripts/run\_city\_y\_curated\_results\_pack.py} & Retain interpretable city outcomes \\
+Grouped city profiles & \texttt{reports/city-grouped-fit-profiles-2026-04-22} & \texttt{scripts/run\_city\_grouped\_profiles.py} & Residual organization by size, state, and signal \\
+Municipal maps & \texttt{reports/city-state-map-pack-2026-04-22} & \texttt{scripts/run\_city\_state\_map\_pack.py} & Spatialized city residuals \\
+AGEB pilot & \texttt{reports/ageb-one-city-guadalajara-2026-04-22} & \texttt{scripts/run\_single\_city\_ageb\_experiment.py} & First intra-urban test \\
+AGEB fitability & \texttt{reports/ageb-fitability-audit-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_fitability\_audit.py} & Which \(Y\)'s survive inside a city \\
+City vs AGEB breakdown & \texttt{reports/city-vs-ageb-breakdown-guadalajara-2026-04-22} & \texttt{scripts/run\_scale\_breakdown\_case\_study.py} & Between- versus within-stratum failure \\
+Centrality case & \texttt{reports/ageb-centrality-extension-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_centrality\_extension\_case.py} & Add centrality to AGEB laws \\
+Centrality usable \(Y\)'s & \texttt{reports/ageb-centrality-extensions-usable-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_centrality\_extensions\_usable.py} & Heterogeneous sensitivity to centrality \\
+Unconstrained subsets & \texttt{reports/ageb-unconstrained-subset-search-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_unconstrained\_subset\_search.py} & Lawful subset discovery without imposed rule \\
+Consensus comparison & \texttt{reports/ageb-consensus-comparison-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_consensus\_comparison.py} & Compare consensus core to remainder \\
+Consensus explanatory models & \texttt{reports/ageb-consensus-explanatory-models-guadalajara-2026-04-22} & \texttt{scripts/run\_ageb\_consensus\_explanatory\_models.py} & Regime-shift interpretation \\
+Internal signatures & \texttt{reports/city-sami-vs-internal-structure-2026-04-22} & \texttt{scripts/run\_city\_sami\_internal\_signature\_experiment.py} & Cross-city internal comparison versus \(\SAMI\) \\
+Latent classes & \texttt{reports/city-sami-latent-classes-2026-04-22} & \texttt{scripts/run\_city\_sami\_latent\_classes.py} & Internal clusters and same-\(\SAMI\) different-inside pairs \\
+Best local subsets by city & \texttt{reports/city-best-local-ageb-subsets-2026-04-22} & \texttt{scripts/run\_city\_best\_local\_ageb\_subsets.py} & Extend subset discovery across cities \\
+Subset OSM connectivity & \texttt{reports/city-selected-subset-osm-connectivity-2026-04-22} & \texttt{scripts/run\_city\_selected\_subset\_osm\_connectivity.py} & Structural description of selected subsets \\
+Random connectivity baseline & \texttt{reports/city-selected-subset-random-connectivity-baseline-2026-04-23} & \texttt{scripts/run\_city\_selected\_subset\_random\_connectivity\_baseline.py} & Selected versus random within city \\
+Connectivity controls & \texttt{reports/city-selected-subset-connectivity-controls-2026-04-23} & \texttt{scripts/run\_city\_selected\_subset\_connectivity\_controls.py} & Test connectivity after controls \\
+Subset extended law & \texttt{reports/city-subset-extended-power-law-2026-04-23} & \texttt{scripts/run\_city\_subset\_extended\_power\_law.py} & Exploratory extended subset law \\
+City-only predictor screen & \texttt{reports/city-only-single-predictor-power-laws-2026-04-23} & \texttt{scripts/run\_city\_only\_single\_predictor\_power\_laws.py} & Fix \(Y\), vary one predictor at a time \\
+Population vs dwellings benchmark & \texttt{reports/city-population-vs-dwellings-2026-04-23}, \texttt{reports/city-population-dwellings-establishments-comparison-2026-04-23} & \texttt{scripts/run\_city\_population\_vs\_dwellings\_pack.py}, \texttt{scripts/run\_city\_population\_dwellings\_establishments\_comparison.py} & Benchmark and residual gap \\
+National OSM extraction & database tables \texttt{derived.city\_network\_*} & \texttt{scripts/extract\_city\_osm\_networks\_to\_db.py} & Persist full city street-network layer \\
+Network typology & \texttt{reports/city-network-typology-2026-04-24} & \texttt{scripts/run\_city\_network\_typology.py} & Discrete topology classes \\
+Class-conditioned scaling & \texttt{reports/city-class-scaling-laws-2026-04-24} & \texttt{scripts/run\_city\_class\_scaling\_laws.py} & Test whether classes shift \(\beta\) \\
+Class-conditioned \(\SAMI\) & \texttt{reports/city-class-sami-distributions-2026-04-24} & \texttt{scripts/run\_city\_class\_sami\_distributions.py} & Test whether classes shift mean residual \\
+Continuous state equation & \texttt{reports/city-continuous-state-equation-2026-04-24} & \texttt{scripts/run\_city\_continuous\_state\_equation.py} & Replace classes by continuous state variables \\
+Spatial information phase I & \texttt{reports/spatial-information-phase1-2026-04-24} & \texttt{scripts/run\_spatial\_information\_phase1.py} & National mutual-information audit at AGEB and manzana support \\
+Selection detail metrics & \texttt{reports/spatial-information-selection-details-2026-04-25} & \texttt{scripts/run\_spatial\_information\_selection\_details.py} & Persist \(w_{j\ell}\), \(D(j)\), and \(D(\ell)\) \\
+Information decomposition & \texttt{reports/spatial-information-multiscale-decomposition-2026-04-25} & \texttt{scripts/run\_spatial\_information\_multiscale\_decomposition.py} & Split information into between-AGEB and within-AGEB parts \\
+Information regimes & \texttt{reports/spatial-information-regimes-2026-04-25} & \texttt{scripts/analyze\_spatial\_information\_regimes.py} & Classify cities by where internal information lives \\
+Information state equation & \texttt{reports/spatial-information-state-equation-2026-04-25} & \texttt{scripts/run\_spatial\_information\_state\_equation.py} & Extend city state equation with internal information \\
+Coarse-graining law audit & \texttt{reports/city-coarse-graining-laws-2026-04-25} & \texttt{scripts/run\_city\_coarse\_graining\_laws.py} & Audit law emergence from manzana to AGEB to city \\
+Final multiscale synthesis & \texttt{reports/city-multiscale-synthesis-2026-04-25} & \texttt{scripts/run\_city\_multiscale\_synthesis.py} & Link coarse-graining gains to absorbed internal information \\
+\bottomrule
+\end{longtable}
+\end{landscape}
+
+\section{Key equations by phase}
+
+\begin{align}
+\text{City baseline:}\qquad
+\log E_i &= \alpha + \beta \log N_i + \varepsilon_i.\\
+\text{City residual:}\qquad
+\SAMI_i &= \log(E_i/\widehat{E}_i).\\
+\text{Family expansion:}\qquad
+\log Y_i^{(f,c)} &= \alpha_{f,c} + \beta_{f,c}\log N_i + \varepsilon_i^{(f,c)}.\\
+\text{AGEB pilot:}\qquad
+\log Y_a &= \alpha + \beta \log N_a + \varepsilon_a.\\
+\text{AGEB + centrality:}\qquad
+\log Y_a &= \alpha + \beta \log N_a + \gamma \log d_a + \varepsilon_a.\\
+\text{Subset law:}\qquad
+\log Y_a &= \alpha_{\mathcal{S}} + \beta_{\mathcal{S}}\log N_a + \varepsilon_a,\quad a\in\mathcal{S}.\\
+\text{Internal signature distance:}\qquad
+d_{\mathrm{internal}}(i,j) &= \|\mathbf{F}_i-\mathbf{F}_j\|.\\
+\text{Class-conditioned city law:}\qquad
+\log E_i &= \alpha_c + \beta_c \log N_i + \varepsilon_i.\\
+\text{Continuous state equation:}\qquad
+\log E_i &= \alpha + \beta n_i + \sum_m \gamma_m z_{m,i} + n_i\sum_m \delta_m z_{m,i} + \varepsilon_i.\\
+\text{Effective exponent:}\qquad
+\beta_{\mathrm{eff},i} &= \beta + \sum_m \delta_m z_{m,i}.
+\end{align}
+
+\begin{align}
+\text{Neighborhood information:}\qquad
+I_i^{(r)}(J;\Lambda)
+&=
+\sum_{j,\ell}
+p_i^{(r)}(j,\ell)
+\log\frac{p_i^{(r)}(j,\ell)}{p_i^{(r)}(j)\,p_i^{(r)}(\ell)}.\\
+\text{Pair lift:}\qquad
+w_{j\ell}
+&=
+\frac{p(j,\ell)}{p(j)p(\ell)}.\\
+\text{Informative unit score:}\qquad
+D_i^{(r)}(j)
+&=
+\sum_\ell p_i^{(r)}(\ell\mid j)\log\frac{p_i^{(r)}(\ell\mid j)}{p_i^{(r)}(\ell)}.\\
+\text{Localized category score:}\qquad
+D_i^{(r)}(\ell)
+&=
+\sum_j p_i^{(r)}(j\mid \ell)\log\frac{p_i^{(r)}(j\mid \ell)}{p_i^{(r)}(j)}.\\
+\text{Multiscale information split:}\qquad
+I(M;\Lambda)
+&=
+I(A;\Lambda)+I(M;\Lambda\mid A).\\
+\text{Within/between shares:}\qquad
+\text{share}_{between,i}
+&=
+\frac{I_i^{(A)}}{I_i^{(M)}},
+\qquad
+\text{share}_{within,i}
+=
+\frac{I_i^{(\mathrm{within})}}{I_i^{(M)}}.\\
+\text{Information-augmented state equation:}\qquad
+\log E_i
+&=
+\alpha+\beta n_i+\sum_m\gamma_m z_{m,i}
++\eta_m m_i+\eta_q q_i \notag\\
+&\qquad
++ n_i\left(\sum_m\delta_m z_{m,i}+\psi_m m_i+\psi_q q_i\right)
++ \varepsilon_i.\\
+\text{Support law at scale } r:\qquad
+\log Y_q^{(r)}
+&=
+\alpha(r)+\beta(r)\log N_q^{(r)}+\varepsilon_q^{(r)}.\\
+\text{Coarse-graining gains:}\qquad
+\Delta\beta_i
+&=
+\beta_{i,\mathrm{AGEB}}-\beta_{i,\mathrm{manzana}},\\
+\Delta R_i^2
+&=
+R^2_{i,\mathrm{AGEB}}-R^2_{i,\mathrm{manzana}},\\
+\Delta \sigma_i^{+}
+&=
+-(\sigma_{i,\mathrm{AGEB}}-\sigma_{i,\mathrm{manzana}}).\\
+\text{Synthesis regressions:}\qquad
+Y_i^\ast
+&=
+\alpha+\eta_m m_i+\eta_q q_i+\eta_n n_i+\psi_m m_i n_i+\psi_q q_i n_i+\varepsilon_i,
+\end{align}
+\noindent
+where \(Y_i^\ast\in\{\Delta R_i^2,\Delta\beta_i,\Delta \sigma_i^{+}\}\).
+
+\section{Rejected or reinterpreted formulations}
+
+\subsection{Why composition was demoted from ``state variable'' to exploratory descriptor}
+
+Composition variables such as sector shares are useful diagnostics:
+\begin{equation}
+q_{i,\ell} = \frac{Y_{i,\ell}}{\sum_{\ell'} Y_{i,\ell'}}.
+\end{equation}
+But if the response itself is
+\begin{equation}
+Y_i = \sum_{\ell'} Y_{i,\ell'},
+\end{equation}
+then \(q_{i,\ell}\) is not a primitive exogenous state variable. It is a normalized function of the same underlying establishment field. For that reason, composition terms were retained for exploratory and explanatory models, but later removed from the ``cleanest'' city-only state-equation branch.
+
+\subsection{Why \(\rho\) was treated cautiously}
+
+The objection to \(\rho=N/A\) is not that it is useless, but that it mixes size and support:
+\begin{equation}
+\log \rho = \log N - \log A.
+\end{equation}
+Therefore, using \(\rho\) as a primitive predictor can hide whether the mechanism is size, area, or both. Later branches therefore favored dimensionless formulations in \(N\), \(A\), and network metrics separately.
+
+\subsection{Why municipality was not treated as built city}
+
+The OSM overlays made visually clear that
+\begin{equation}
+\text{municipal support} \neq \text{built-up urban support}
+\end{equation}
+for many cases. This does not invalidate municipal city laws, but it constrains how geometric and network variables should be interpreted.
+
+\bibliographystyle{unsrtnat}
+\bibliography{references}
+
+\end{document}

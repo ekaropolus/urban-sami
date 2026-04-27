@@ -1,0 +1,26 @@
+version: "0.1"
+kind: "summary_matrix_replay"
+
+metadata:
+  workflow_id: "mx_state_population_replay"
+  title: "MX State Population Replay"
+  description: "Replay preserved Polisplexity state-level summary artifacts."
+  country_code: "MX"
+
+data_sources:
+  summary:
+    source_type: "csv_summary"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities/summary.csv"
+  request:
+    source_type: "json_request"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities/request_matrix.json"
+  report:
+    source_type: "markdown_report"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities/report.md"
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: true
+  write_summary_csv: true
+

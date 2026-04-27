@@ -1,0 +1,22 @@
+version: "0.1"
+kind: "polisplexity_run_dir_parity"
+
+metadata:
+  workflow_id: "polisplexity_state_run_dir_parity"
+  title: "Polisplexity State Run Directory Parity"
+  description: "Validate a completed Polisplexity run directory directly."
+  country_code: "MX"
+
+data_sources:
+  run_dir:
+    source_type: "directory"
+    path: "../tests/fixtures/polisplexity_golden/state_population_all_cities"
+
+compare:
+  numeric_tolerance: 0.000001
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: true

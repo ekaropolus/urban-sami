@@ -1,0 +1,9 @@
+domain_id,unit_id,scian_code,per_ocu
+admin_ageb,admin_ageb:001,461110,0 a 5 personas
+admin_ageb,admin_ageb:001,722515,11 a 30 personas
+admin_ageb,admin_ageb:002,541430,251 y mas personas
+hex_8,hex_8:abc,461110,0 a 5 personas
+hex_8,hex_8:abc,722515,11 a 30 personas
+hex_8,hex_8:def,541430,251 y mas personas
+geofence_demo,geofence_demo:g1,541430,251 y mas personas
+

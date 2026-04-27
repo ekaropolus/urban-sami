@@ -1,0 +1,62 @@
+version: "0.1"
+kind: "indicator_sami"
+
+metadata:
+  workflow_id: "indicator_sami_demo"
+  title: "Generic Indicator plus SAMI Demo"
+  description: "Compute indicators then fit SAMI inside urban-sami."
+  country_code: "MX"
+
+data_sources:
+  units:
+    source_type: "csv_units"
+    path: "../tests/fixtures/indicator_compute/units.csv"
+  observations:
+    source_type: "csv_observations"
+    path: "../tests/fixtures/indicator_compute/observations.csv"
+
+geometry_domains:
+  - domain_id: "admin_ageb"
+    domain_type: "admin"
+    level: "ageb_u"
+  - domain_id: "hex_8"
+    domain_type: "hex"
+    resolution: 8
+  - domain_id: "geofence_demo"
+    domain_type: "geofence"
+    geofence_id: "g1"
+
+indicators:
+  - key: "denue_est_count"
+    enabled: true
+    scale_basis: "population"
+  - key: "denue_est_per_1k_pop"
+    enabled: true
+    scale_basis: "population"
+  - key: "denue_revenue_proxy_daily_mxn"
+    enabled: true
+    scale_basis: "population"
+    params:
+      sector_daily_mxn:
+        "46": 100.0
+        "54": 200.0
+        "72": 150.0
+        default: 50.0
+      size_multiplier:
+        micro: 1.0
+        small: 2.0
+        large: 10.0
+        default: 1.0
+      default_daily_mxn: 50.0
+
+models:
+  fit_methods:
+    - "ols"
+    - "auto"
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: false
+

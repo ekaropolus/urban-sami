@@ -1,0 +1,51 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "unit_id": "poly_a",
+        "unit_label": "Polygon A",
+        "parent_id": "city_demo",
+        "population": 1200,
+        "households": 320,
+        "area_km2": 1.5
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-100.0, 20.0],
+            [-99.0, 20.0],
+            [-99.0, 21.0],
+            [-100.0, 21.0],
+            [-100.0, 20.0]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "unit_id": "poly_b",
+        "unit_label": "Polygon B",
+        "parent_id": "city_demo",
+        "population": 2400,
+        "households": 640,
+        "area_km2": 2.0
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-99.0, 20.0],
+            [-98.0, 20.0],
+            [-98.0, 21.0],
+            [-99.0, 21.0],
+            [-99.0, 20.0]
+          ]
+        ]
+      }
+    }
+  ]
+}

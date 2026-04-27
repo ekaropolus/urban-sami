@@ -1,0 +1,29 @@
+version: "0.1"
+kind: "geojson_point_assign"
+
+metadata:
+  workflow_id: "geojson_point_assign_demo"
+  title: "GeoJSON Point Assign Demo"
+  description: "Assign DENUE-style points to GeoJSON polygon units."
+  country_code: "MX"
+
+data_sources:
+  polygons:
+    source_type: "geojson"
+    path: "../tests/fixtures/geojson/mini_polygons.geojson"
+  observations:
+    source_type: "denue_points_csv"
+    path: "../tests/fixtures/geojson/mini_points.csv"
+
+geometry_domains:
+  - domain_id: "geo_demo"
+    domain_type: "geojson_polygon"
+    unit_id_field: "unit_id"
+    unit_label_field: "unit_label"
+
+outputs:
+  base_dir: "../dist"
+  write_bundle_zip: true
+  write_report_md: false
+  write_summary_csv: false
+
