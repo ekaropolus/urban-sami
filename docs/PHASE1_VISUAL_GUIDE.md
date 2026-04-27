@@ -14,7 +14,7 @@ This figure shows the executable path from persistent database inputs to the fit
 
 ![City scaling law](figures/phase1/phase1_city_scaling_law.svg)
 
-Each point is one city. The red line is the fitted law `log E = alpha + beta log N`. The core result is beta near 0.95 with adjusted R2 near 0.846.
+Each point is one city and point color identifies its Mexican state code. The red line is the fitted law `log E = alpha + beta log N`. The core result is beta near 0.95 with adjusted R2 near 0.846.
 
 ## 3. Residuals Become SAMI
 

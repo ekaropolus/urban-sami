@@ -36,6 +36,41 @@ CLASS_COLORS = {
     "D_unfit": RUST,
 }
 
+STATE_PALETTE = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#4e79a7",
+    "#f28e2b",
+    "#59a14f",
+    "#e15759",
+    "#76b7b2",
+    "#edc948",
+    "#b07aa1",
+    "#ff9da7",
+    "#9c755f",
+    "#bab0ab",
+    "#006d77",
+    "#83c5be",
+    "#e29578",
+    "#6d597a",
+    "#b56576",
+    "#355070",
+    "#588157",
+    "#a3b18a",
+    "#bc6c25",
+    "#606c38",
+    "#3a86ff",
+    "#fb5607",
+]
+
 
 def read_csv(path: Path) -> list[dict[str, str]]:
     with path.open("r", encoding="utf-8", newline="") as handle:
@@ -97,6 +132,8 @@ def write_scaling_law() -> Path:
 
     xs = [f(r["population"]) for r in rows]
     ys = [f(r["est_count"]) for r in rows]
+    state_codes = sorted({r["state_code"] for r in rows})
+    state_colors = {state: STATE_PALETTE[idx % len(STATE_PALETTE)] for idx, state in enumerate(state_codes)}
     xmin, xmax = min(xs), max(xs)
     ymin, ymax = min(ys), max(ys)
     lxmin, lxmax = math.log10(xmin) - 0.05, math.log10(xmax) + 0.05
@@ -123,7 +160,8 @@ def write_scaling_law() -> Path:
     for row in rows:
         x = f(row["population"])
         y = f(row["est_count"])
-        parts.append(f'<circle cx="{px(x):.1f}" cy="{py(y):.1f}" r="2.2" fill="{BLUE}" fill-opacity="0.46"/>')
+        color = state_colors[row["state_code"]]
+        parts.append(f'<circle cx="{px(x):.1f}" cy="{py(y):.1f}" r="2.25" fill="{color}" fill-opacity="0.58"/>')
 
     x1, x2 = xmin, xmax
     y1 = math.exp(alpha + beta * math.log(x1))
@@ -135,6 +173,18 @@ def write_scaling_law() -> Path:
     parts.append(f'<text x="{note_x+18}" y="{note_y+30}" font-size="17" font-family="Helvetica" font-weight="700" fill="{INK}">log E = alpha + beta log N</text>')
     parts.append(f'<text x="{note_x+18}" y="{note_y+58}" font-size="15" font-family="Helvetica" fill="{INK}">beta = {beta:.3f}   adj. R² = {r2:.3f}</text>')
     parts.append(f'<text x="{note_x+18}" y="{note_y+82}" font-size="13" font-family="Helvetica" fill="{MUTED}">n = {len(rows):,} cities with positive N and E</text>')
+
+    legend_x = left + plot_w - 330
+    legend_y = top + plot_h - 142
+    parts.append(f'<rect x="{legend_x}" y="{legend_y}" width="295" height="104" rx="6" fill="#ffffff" fill-opacity="0.88" stroke="#d9d2c4"/>')
+    parts.append(f'<text x="{legend_x+14}" y="{legend_y+24}" font-size="13" font-family="Helvetica" font-weight="700" fill="{INK}">Color = state_code</text>')
+    for idx, state in enumerate(state_codes):
+        col = idx % 8
+        row = idx // 8
+        x = legend_x + 15 + col * 34
+        y = legend_y + 44 + row * 17
+        parts.append(f'<circle cx="{x}" cy="{y}" r="4" fill="{state_colors[state]}" fill-opacity="0.9"/>')
+        parts.append(f'<text x="{x+7}" y="{y+4}" font-size="10" font-family="Helvetica" fill="{MUTED}">{esc(state)}</text>')
 
     parts.append(f'<text x="{left+plot_w/2}" y="{height-38}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}">Population N, log scale</text>')
     parts.append(f'<text x="34" y="{top+plot_h/2}" text-anchor="middle" font-size="15" font-family="Helvetica" fill="{INK}" transform="rotate(-90 34 {top+plot_h/2})">DENUE establishments E, log scale</text>')
@@ -454,7 +504,7 @@ def write_guide(paths: list[Path]) -> Path:
                 "",
                 f"![City scaling law]({rels[1]})",
                 "",
-                "Each point is one city. The red line is the fitted law `log E = alpha + beta log N`. The core result is beta near 0.95 with adjusted R2 near 0.846.",
+                "Each point is one city and point color identifies its Mexican state code. The red line is the fitted law `log E = alpha + beta log N`. The core result is beta near 0.95 with adjusted R2 near 0.846.",
                 "",
                 "## 3. Residuals Become SAMI",
                 "",
