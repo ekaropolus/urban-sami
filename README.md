@@ -34,6 +34,7 @@ For community review, the project now includes explicit monograph-to-code crossw
 - [docs/monograph-script-crosswalk.csv](docs/monograph-script-crosswalk.csv)
 - [docs/EQUATION_TRACEABILITY.md](docs/EQUATION_TRACEABILITY.md)
 - [docs/equation-traceability.csv](docs/equation-traceability.csv)
+- [docs/PHASE1_VISUAL_GUIDE.md](docs/PHASE1_VISUAL_GUIDE.md)
 
 These files connect:
 
